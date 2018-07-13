@@ -14,6 +14,7 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 #include <string>
+
 namespace xmagma{
     template <typename NumericT>
     class matrix{                                                        
