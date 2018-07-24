@@ -52,8 +52,19 @@ magma_dprint_gpu( xMat2.size1(),xMat2.size2(), xMat2.get_pointer(),
 double array2 [ ] = { 12, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 xmagma::RMatrix< double > RMat2( &array2[ 0 ], 2, 5 );
 std::cout << RMat2 << std::endl;
+// transfer
 xmagma::copy( xMat2, RMat2 );
 std::cout << RMat2 << std::endl;
+xmagma::RVector< double > rvec1( &array2[ 0 ], 10 );
+std::cout << rvec1 << std::endl;
+// transpose
+xmagma::Matrix< double > xMat3;
+xMat3 = xmagma::t( xMat2 );
+magma_dprint_gpu( xMat2.size1(),xMat2.size2(), xMat2.get_pointer(),
+           xMat2.ld(), xmagma::Backend::get_queue() );
+
+magma_dprint_gpu( xMat3.size1(),xMat3.size2(), xMat3.get_pointer(),
+           xMat3.ld(), xmagma::Backend::get_queue() );
 // copy data from host to device
 magma_ssetvector (m, a, 1, d_a ,1, xmagma::Backend::get_queue() ); // copy a -> d_a
 // find the smallest index of the element of d_a with maximum
