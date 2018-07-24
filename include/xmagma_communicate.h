@@ -20,12 +20,23 @@ namespace xmagma {
         if ( cpu.size1() == 0 || cpu.size2() == 0 ) {
             return;
         }
-        // initialize a new matrix of dimension doesn't match
         if(  cpu.size1() != gpu.size1() || cpu.size2() != gpu.size2() ){
             printf( "dimension doesn't match \n" );
             return;
         }
         transfer_matrix< T >( cpu, gpu );
+    }
+    // GPU to host
+    template< typename T >
+    void copy( Matrix< T >& gpu, RMatrix< T >& cpu ) {
+        if ( gpu.size1() == 0 || gpu.size2() == 0 ) {
+            return;
+        }
+        if(  cpu.size1() != gpu.size1() || cpu.size2() != gpu.size2() ){
+            printf( "dimension doesn't match \n" );
+            return;
+        }
+        transfer_matrix< T >( gpu, cpu );
     }
 }
 #endif /* XMAGMA_COMMUNICATE_H */
