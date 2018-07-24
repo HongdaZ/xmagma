@@ -13,13 +13,57 @@
 
 #include <stdlib.h>
 #include <iostream>
-#include "xmagma_matrix.h"
+#include "xmagma.h"
 /*
  * Simple C++ Test Suite
  */
 
 void test1() {
-    std::cout << "newsimpletest test 1" << std::endl;
+
+magma_int_t m = 1024 ; // length of a
+float *a; // a - m- vector on the host
+float *d_a; // d_a - m- vector a on the device
+// allocate array on the host
+magma_smalloc_cpu ( &a , m ); // host memory for a
+// allocate array on the device
+magma_smalloc ( &d_a , m ); // device memory for a
+// a={ sin (0) , sin (1) ,... , sin (m -1)}
+for(int j=0;j<m;j++) a[j]= sin (( float )j);
+xmagma::M_SUB;
+xmagma::Matrix< double > A( 2000, 2000 );
+xmagma::Matrix< double > B( 10, 10 );
+A = B;
+double array [ ] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+xmagma::RMatrix< double > RMat1( &array[ 0 ], 2, 5 );
+xmagma::Matrix< double > xMat1( 2, 5 );
+xmagma::copy( RMat1, xMat1 );
+
+magma_dprint_gpu( xMat1.size1(), xMat1.size2(), xMat1.get_pointer(),
+            xMat1.ld(), xmagma::Backend::get_queue() );
+
+A = xMat1;
+magma_dprint_gpu( A.size1(),A.size2(), A.get_pointer(),
+            A.ld(), xmagma::Backend::get_queue() );
+
+xmagma::Matrix< double > xMat2( xMat1 ); 
+magma_dprint_gpu( xMat2.size1(),xMat2.size2(), xMat2.get_pointer(),
+           xMat2.ld(), xmagma::Backend::get_queue() );
+
+double array2 [ ] = { 12, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+xmagma::RMatrix< double > RMat2( &array2[ 0 ], 2, 5 );
+std::cout << RMat2 << std::endl;
+xmagma::copy( xMat2, RMat2 );
+std::cout << RMat2 << std::endl;
+// copy data from host to device
+magma_ssetvector (m, a, 1, d_a ,1, xmagma::Backend::get_queue() ); // copy a -> d_a
+// find the smallest index of the element of d_a with maximum
+// absolute value
+int i = magma_isamax( m, d_a, 1, xmagma::Backend::get_queue() );
+printf ("max |a[i]|: %f\n",fabs (a[i -1]));
+printf (" fortran index : %d\n",i);
+magma_free_cpu (a); // free host memory
+magma_free (d_a ); // free device memory
+
 }
 
 void test2() {
