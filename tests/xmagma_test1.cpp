@@ -65,6 +65,32 @@ magma_dprint_gpu( xMat2.size1(),xMat2.size2(), xMat2.get_pointer(),
 
 magma_dprint_gpu( xMat3.size1(),xMat3.size2(), xMat3.get_pointer(),
            xMat3.ld(), xmagma::Backend::get_queue() );
+
+xmagma::Matrix< double > xMat4( 5, 2 );
+xMat4 = xmagma::t( xMat2 );
+magma_dprint_gpu( xMat4.size1(),xMat4.size2(), xMat4.get_pointer(),
+           xMat4.ld(), xmagma::Backend::get_queue() );
+
+double array3 [ ] = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+xmagma::RMatrix< double > RMat3( &array[ 0 ], 3, 3 );
+xmagma::Matrix< double > xMat5( 3, 3 );
+array[ 7 ] = 100;
+xmagma::RMatrix< double > RMat4( &array[ 0 ], 3, 3 );
+xmagma::Matrix< double > xMat6( 3, 3 );
+xmagma::copy( RMat4, xMat6 );
+xmagma::copy( RMat3, xMat5 );
+magma_dprint_gpu( xMat5.size1(),xMat5.size2(), xMat5.get_pointer(),
+           xMat5.ld(), xmagma::Backend::get_queue() );
+// inplace add
+xMat5 = xmagma::t( xMat5 );
+magma_dprint_gpu(xMat5.size1(), xMat5.size2(), xMat5.get_pointer(),
+            xMat5.ld(), xmagma::Backend::get_queue());
+xmagma::print( xMat5 );
+xMat5 += xMat5;
+xmagma::print( xMat5 );
+xmagma::print( xMat6 );
+xMat5 += xMat6;
+xmagma::print( xMat5 );
 // copy data from host to device
 magma_ssetvector (m, a, 1, d_a ,1, xmagma::Backend::get_queue() ); // copy a -> d_a
 // find the smallest index of the element of d_a with maximum
