@@ -4,8 +4,19 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>include/forwards.h</itemPath>
+      <itemPath>include/xmagma.h</itemPath>
+      <itemPath>include/xmagma_R_array.h</itemPath>
+      <itemPath>include/xmagma_backend.h</itemPath>
+      <itemPath>include/xmagma_communicate.h</itemPath>
+      <itemPath>include/xmagma_forwards.h</itemPath>
       <itemPath>include/xmagma_matrix.h</itemPath>
+      <itemPath>include/xmagma_matrix_expression.h</itemPath>
+      <itemPath>include/xmagma_op_executor.h</itemPath>
+      <itemPath>include/xmagma_operations.h</itemPath>
+      <itemPath>include/xmagma_tools.h</itemPath>
+      <itemPath>include/xmagma_util.h</itemPath>
+      <itemPath>xmagma_vector.h</itemPath>
+      <itemPath>xmagma_vector_expression.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -95,11 +106,33 @@
           <output>${TESTDIR}/TestFiles/f1</output>
         </linkerTool>
       </folder>
-      <item path="include/forwards.h" ex="false" tool="3" flavor2="0">
+      <item path="include/xmagma.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_R_array.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_backend.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_communicate.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_forwards.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/xmagma_matrix.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/xmagma_matrix_expression.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_op_executor.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_operations.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_tools.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_util.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="tests/xmagma_test1.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="xmagma_vector.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
     <conf name="Release" type="2">
@@ -155,11 +188,33 @@
           <output>${TESTDIR}/TestFiles/f1</output>
         </linkerTool>
       </folder>
-      <item path="include/forwards.h" ex="false" tool="3" flavor2="0">
+      <item path="include/xmagma.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_R_array.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_backend.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_communicate.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_forwards.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/xmagma_matrix.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/xmagma_matrix_expression.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_op_executor.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_operations.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_tools.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_util.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="tests/xmagma_test1.cpp" ex="false" tool="1" flavor2="0">
+      </item>
+      <item path="xmagma_vector.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
   </confs>

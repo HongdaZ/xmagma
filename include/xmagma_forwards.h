@@ -19,17 +19,40 @@ namespace xmagma {
         M_SUB,
         M_TRANS,
         M_MULT,
+        V_ADD,
+        V_SUB,
+        V_TRANS,
         V_OUTER,
-        M_SCALE
+        M_SCALE,
+        M_DIV,
+        M_NEGATIVE,
+        M_ASSIGN,
+        M_INPLACE_ADD,
+        M_INPLACE_SUB,
+        V_SCALE,
+        V_DIV,
+        V_NEGATIVE,
+        V_ASSIGN,
+        V_INPLACE_ADD,
+        V_INPLACE_SUB,
+        MV_MULT
+    };
+    // vector type
+    enum VecType {
+        ROW,
+        COL
     };
     class Backend;
     class Queue;
     template< typename L, typename R, Oper O > 
     class MatrixExpression;
+    template< typename L, typename R, Oper O > 
+    class VectorExpression;
     template < typename T > class RVector;
     template < typename T > class RMatrix;
     template< typename L, typename R, Oper O > class MatrixSize;
-    template< typename T> class Matrix;
+    template< typename T > class Matrix;
+    template< typename T, VecType Type > class Vector;
     template < typename T> class ScalarValue;
     template< typename T > using Scalar = 
         typename ScalarValue< T >::type;
@@ -47,6 +70,17 @@ namespace xmagma {
     template< typename T >
     void copy( const RMatrix< T >& cpu, Matrix< T >& gpu );
     
+    template< typename T, VecType Major > 
+    int copy_vector( Vector< T, Major >& v1, 
+            const Vector< T, Major >& v2 );
+    template< typename T, VecType Major > 
+    void transfer_vector( RVector< T > const& v1,
+            Vector< T, Major >& v2 );
+    template< typename T, VecType Major >
+    void copy( const RVector< T >& cpu, Vector< T, Major >& gpu );
+    
+    template< typename L, Oper O, typename R >
+    class OpExecutor;
     
 } // xmagma
 

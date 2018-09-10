@@ -50,6 +50,8 @@ namespace xmagma {
          */
         // A = B
         SelfType& operator=( const SelfType& other );
+        // A = a
+        SelfType& operator=( const T a );
         template< typename L, typename R, Oper O>
         SelfType& operator=( const MatrixExpression< const L, const R,
                 O >& proxy );
@@ -70,7 +72,7 @@ namespace xmagma {
         SelfType& operator*=( T );
         SelfType& operator/=( T );
         // -A
-        MatrixExpression< const SelfType, const T,  M_MULT > 
+        MatrixExpression< const SelfType, const SelfType,  M_NEGATIVE > 
         operator-() const;
         
         /* Return dimensions of the matrix */
@@ -79,12 +81,26 @@ namespace xmagma {
         size_type size2() const { return size2_; }
         size_type ld() const { return ld_; }
         /* Return pointer of elements */
-        MagmaPtr< T > get_pointer() const { return elements_; }
+        const MagmaPtr< T >& get_pointer() const { return elements_; }
+        MagmaPtr< T >& get_pointer() { return elements_; }
     private: 
         MagmaPtr< T > elements_;
         size_type size1_; // #of rows
         size_type size2_; // #of columns
         size_type ld_; // leading dimension of matrix, ld_ >= size1_
     };  //Matrix
+    // print matrix
+    template< typename T >
+    void print( Matrix< T >& a ) {};
+    template<>
+    void print( Matrix< float >& a ) {
+        magma_sprint_gpu( a.size1(), a.size2(), a.get_pointer(),
+            a.ld(), Backend::get_queue());
+    };
+    template<>
+    void print( Matrix< double >& a ) {
+        magma_dprint_gpu( a.size1(), a.size2(), a.get_pointer(),
+            a.ld(), Backend::get_queue());
+    };
 } //xmagma
 #endif /* XMAGMA_MATRIX_H */

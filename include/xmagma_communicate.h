@@ -10,6 +10,7 @@
 
 #include "xmagma_R_array.h"
 #include "xmagma_matrix.h"
+#include "xmagma_vector.h"
 #include "xmagma_operations.h"
 
 namespace xmagma {
@@ -37,6 +38,30 @@ namespace xmagma {
             return;
         }
         transfer_matrix< T >( gpu, cpu );
+    }
+    /* Copy vector from host to GPU */
+    template< typename T, VecType M >
+    void copy( RVector< T >& cpu, Vector< T, M >& gpu ) {
+        if ( cpu.size() == 0 || cpu.size() == 0 ) {
+            return;
+        }
+        if(  cpu.size() != gpu.size() ){
+            printf( "dimension doesn't match \n" );
+            return;
+        }
+        transfer_vector< T, M >( cpu, gpu );
+    }
+    // GPU to host
+    template< typename T, VecType M >
+    void copy( Vector< T, M >& gpu, RVector< T >& cpu ) {
+        if ( gpu.size() == 0 || gpu.size() == 0 ) {
+            return;
+        }
+        if(  cpu.size() != gpu.size() ){
+            printf( "dimension doesn't match \n" );
+            return;
+        }
+        transfer_vector< T >( gpu, cpu );
     }
 }
 #endif /* XMAGMA_COMMUNICATE_H */

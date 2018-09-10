@@ -20,19 +20,29 @@
 
 void test1() {
 
-magma_int_t m = 1024 ; // length of a
-float *a; // a - m- vector on the host
-float *d_a; // d_a - m- vector a on the device
+magma_int_t m = 4; // length of a
+double *a; // a - m- vector on the host
+double *d_a; // d_a - m- vector a on the device
 // allocate array on the host
-magma_smalloc_cpu ( &a , m ); // host memory for a
+magma_dmalloc_cpu ( &a , m ); // host memory for a
 // allocate array on the device
-magma_smalloc ( &d_a , m ); // device memory for a
+magma_dmalloc ( &d_a , m ); // device memory for a
 // a={ sin (0) , sin (1) ,... , sin (m -1)}
 for(int j=0;j<m;j++) a[j]= sin (( float )j);
+// copy data from host to device
+magma_dsetvector (m, a, 1, d_a ,1, xmagma::Backend::get_queue() ); // copy a -> d_a
+// find the smallest index of the element of d_a with maximum
+// absolute value
+int i = magma_idamax( m, d_a, 1, xmagma::Backend::get_queue() );
+printf ("max |a[i]|: %f\n",fabs (a[i -1]));
+printf (" fortran index : %d\n",i);
+
 xmagma::M_SUB;
-xmagma::Matrix< double > A( 2000, 2000 );
+xmagma::Matrix< double > A( 2, 5 );
+xmagma::Matrix< double > C;
 xmagma::Matrix< double > B( 10, 10 );
 A = B;
+
 double array [ ] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 xmagma::RMatrix< double > RMat1( &array[ 0 ], 2, 5 );
 xmagma::Matrix< double > xMat1( 2, 5 );
@@ -48,7 +58,10 @@ magma_dprint_gpu( A.size1(),A.size2(), A.get_pointer(),
 xmagma::Matrix< double > xMat2( xMat1 ); 
 magma_dprint_gpu( xMat2.size1(),xMat2.size2(), xMat2.get_pointer(),
            xMat2.ld(), xmagma::Backend::get_queue() );
-
+C = A; 
+printf( "matrix C \n" );
+magma_dprint_gpu( C.size1(),C.size2(), C.get_pointer(),
+            C.ld(), xmagma::Backend::get_queue() );
 double array2 [ ] = { 12, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 xmagma::RMatrix< double > RMat2( &array2[ 0 ], 2, 5 );
 std::cout << RMat2 << std::endl;
@@ -88,18 +101,267 @@ magma_dprint_gpu(xMat5.size1(), xMat5.size2(), xMat5.get_pointer(),
 xmagma::print( xMat5 );
 xMat5 += xMat5;
 xmagma::print( xMat5 );
+printf( "xMat6\n" );
 xmagma::print( xMat6 );
 xMat5 += xMat6;
 xmagma::print( xMat5 );
-// copy data from host to device
-magma_ssetvector (m, a, 1, d_a ,1, xmagma::Backend::get_queue() ); // copy a -> d_a
-// find the smallest index of the element of d_a with maximum
-// absolute value
-int i = magma_isamax( m, d_a, 1, xmagma::Backend::get_queue() );
-printf ("max |a[i]|: %f\n",fabs (a[i -1]));
-printf (" fortran index : %d\n",i);
-magma_free_cpu (a); // free host memory
-magma_free (d_a ); // free device memory
+//inplace_sub
+xMat5 -=xMat6;
+xmagma::print( xMat5 );
+xMat5 -=xMat5;
+xmagma::print( xMat5 );
+//scale
+xMat6 *=8;
+xmagma::print( xMat6 );
+xMat6 /=8;
+xmagma::print( xMat6 );
+xMat6 /=0;
+// -A
+-xMat6;
+// A = 10
+xMat6 = 10;
+xmagma::print( xMat6 );
+//expression( A ) + expression( B )
+( xMat6 + xMat6 ) + ( xMat6 + xMat6 );
+xMat6 + xMat6 + xMat6 + xMat6;
+xMat6 + ( xMat6 + xMat6 );
+// expression( A ) - expression( B )
+( xMat6 + xMat6 ) - ( xMat6 + xMat6 );
+// expression( A ) - B
+( xMat6 + xMat6 ) - xMat6;
+// A - expression( B )
+ xMat6 - ( xMat6 + xMat6 );
+ // A - B
+ xMat6 - xMat6;
+ t( t( xMat6 ) );
+ xmagma::print( xMat6 );
+ 
+ xmagma::copy( RMat3, xMat5 );
+ xmagma::print( xMat5 );
+ xMat6 = xMat6 + ( xMat5 + xMat5 );
+ xmagma::print( xMat6 );
+ // A = B + t ( C )
+ xmagma::Matrix< double > xMat7( 3, 3);
+ xMat7 = 7;
+ xmagma::print( xMat7 );
+ xMat6 = t( xMat5 + xMat7 ) + xMat5;
+ xmagma::print( xMat6 );
+ xMat6 = ( xMat5 + xMat7 ) + t( xMat5 + xMat7 );
+ xmagma::print( xMat6 );
+
+ xMat6 = t( t( xMat5 ) ) ;
+ xmagma::print( xMat6 );
+
+ //xMat6 / 0;
+ // OpExecutor
+ // A -= B
+ xMat6 -= xMat7;
+ xmagma::print( xMat6 );
+ xmagma::print( xMat7 );
+  xMat6 -= t( xMat7 );
+  xmagma::print( xMat6 );
+ // A -= trans( expression( B + C )
+   xmagma::print( xMat5 );
+  xMat6 -= t( xMat7 + xMat5 );
+  xmagma::print( xMat6 );
+  xmagma::print( xMat7 );
+
+  xMat6 += xMat7 * 2.0;
+  xmagma::print( xMat6 );
+   xMat6 += xMat7 / 2.0;
+    xmagma::print( xMat6 );
+   xMat6 -= xMat7 / 2;
+   xmagma::print( xMat6 );
+   xMat6 = xMat7 * 2 * 2 ;
+   xmagma::print( xMat6 );
+   xMat6 = 2 * 4 * xMat7;
+   xMat6 = ( xMat7 + xMat6 ) / 2 / 7;
+   xmagma::print( xMat6 );
+   xMat6 = - ( - xMat7 + xMat6 );
+   xmagma::print( xMat6 );
+   xMat6 = xMat5;
+   print( xMat6 );
+   xMat6 += xMat6 * 1;
+   print( xMat6 );
+   xMat6 += -xMat5;
+   print( xMat6 );
+   xMat6 += -( xMat5 + xMat7 ) ;
+   print( xMat6 );
+   xMat6 += - xMat5;
+   print( xMat6 );
+   xMat7 -= ( - xMat7 ) * 3;
+   print( xMat7 );
+   xMat7 -= - ( 2 *  xMat7 );
+   print( xMat7 );
+   xMat7 = 7;
+   printf( "xMat7\n" );
+   print( xMat7 );
+   print( xMat6 );
+   xMat6 += ( - xMat7 ) /  2;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= ( - xMat7 ) /  2;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   printf( "xMat5" );
+   print( xMat5 );
+   xMat6 = (- xMat5 ) + (- xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( 2 * xMat5 ) + (- xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( xMat7 / 2 ) + (- xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( xMat7 / 2 ) + (- xMat6 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += xMat7 / 5;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat7 + 2 * xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat7 + xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat7 * 2 + xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat7 / 2 + xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat7 + xMat6 * 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat7 + xMat6 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat7 * 2 + xMat5 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= ( xMat7 * 2 + xMat6 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= ( - xMat5 + xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= (  xMat5 + xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= ( 2 * xMat5 + xMat7 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( 2 * xMat5 - xMat7 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( xMat5 - xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( xMat5 - xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( 2 * xMat5 - xMat7 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( 2 * xMat5 - xMat7 / 2 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( 2 * xMat5 - xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= ( - xMat5 - xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   printf( "xMat5\n" );
+   print( xMat5 );
+   xMat6 = ( xMat5 * xMat5 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( xMat5 * t( xMat6 ) );
+   printf( "xMat5\n" );
+   print( xMat5 );
+   printf( "xMat7\n" );
+   print( xMat7 );
+   xMat6 = xMat5 * ( xMat7 + xMat5 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = t( xMat5 ) * xMat7;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = ( xMat5 + xMat7 ) * xMat5;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = t( xMat5 ) * t( xMat5 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = t( xMat5 + xMat5 ) * ( xMat5 + xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += xMat5 * xMat7;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += xMat5 * t( xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += xMat5 * ( xMat6 + xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += t( xMat5 ) * xMat7;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += t( xMat5 + xMat6 ) * xMat7;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += t( xMat5 ) * t( xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 = xMat5;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 += ( xMat5 - xMat7 ) * ( xMat5 - 10 * xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= xMat5 * xMat7;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= xMat5 * t( xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= xMat5 * ( xMat6 - 2 * xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= t( xMat5 ) * xMat7;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= ( xMat5 - xMat7 ) * xMat7;
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= t( xMat5 ) * t( xMat6 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   xMat6 -= ( xMat5 - 2 * xMat7 ) * t( xMat6 + 3 * xMat7 );
+   printf( "xMat6\n" );
+   print( xMat6 );
+   /* Vector */
+   xmagma::RVector< double > rv1( &a[ 0 ], m );
+   std::cout << rv1;
+   xmagma::Vector< double, xmagma::COL > xV1( 4 ), xV2( 4 );
+   transfer_vector( rv1, xV1 );
+   printf( "xV1\n");
+   print( xV1 );
+   for(int j=0;j<m;j++) a[j]= tan (( float )j) + 1;
+   transfer_vector( rv1, xV2 );
+   printf( "xV2\n");
+   print( xV2 );
+   xmagma::Vector< double, xmagma::COL > xV3( xV2 );
+   printf( "xV3\n");
+   print( xV3 );
+
+
+   magma_free_cpu (a); // free host memory
+   magma_free (d_a ); // free device memory
 
 }
 
@@ -109,7 +371,7 @@ void test2() {
 }
 
 int main(int argc, char** argv) {
-    std::cout << "%SUITE_STARTING% newsimpletest" << std::endl;
+    std::cout << "%SUITE_STARTING% newsimpletest" << std::endl;              
     std::cout << "%SUITE_STARTED%" << std::endl;
 
     std::cout << "%TEST_STARTED% test1 (newsimpletest)" << std::endl;

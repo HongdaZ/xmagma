@@ -23,6 +23,8 @@
 #include "xmagma_tools.h"
 #include "xmagma_util.h"
 #include "xmagma_communicate.h"
+#include "xmagma_vector.h"
+#include "xmagma_vector_expression.h"
 
 #endif /* XMAGMA_H */
 

@@ -7,6 +7,17 @@
 
 #ifndef XMAGMA_R_ARRAY_H
 #define XMAGMA_R_ARRAY_H
+
+#include <iostream>
+
+#ifdef HAVE_CUBLAS
+#include "cublas_v2.h"    
+#include "magma_v2.h"
+#else 
+#include "magma.h" // for clmagma
+#endif
+#include "magma_lapack.h" 
+
 namespace xmagma {
     template < typename T >
     class RVector {
@@ -56,6 +67,32 @@ public:
     typedef std::size_t size_type;
     T* begin(){ return &start_[ 0 ]; }
     };
+    /* Overload << operator */
+    //RMatrix
+    template< typename T >
+    inline std::ostream&
+    operator<<( std::ostream& out, const RMatrix< T >& mat ) {
+        out << "[" << "\n";
+        for ( std::size_t i = 0; i < mat.size1(); ++i ) {
+            for ( std::size_t j = 0; j < mat.size2(); ++j ) {
+                out << mat( i, j ) << "\t";
+            }
+            out << "\n";
+        }
+        out << "];" << "\n";
+        return out;
+    }
+    //RVector
+    template< typename T >
+    inline std::ostream&
+    operator<<( std::ostream& out, const RVector< T >& vec ) {
+        out << "[" << "\n";
+        for ( std::size_t i = 0; i < vec.size(); ++i ) {
+                out << vec( i ) << "\t";
+        }
+        out <<"\n" << "];" << "\n";
+        return out;
+    }
 }
 
 #endif /* XMAGMA_R_ARRAY_H */

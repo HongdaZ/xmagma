@@ -86,7 +86,7 @@ ${TESTDIR}/TestFiles/f1: ${TESTDIR}/tests/xmagma_test1.o ${OBJECTFILES:%.o=%_nom
 ${TESTDIR}/tests/xmagma_test1.o: tests/xmagma_test1.cpp 
 	${MKDIR} -p ${TESTDIR}/tests
 	${RM} "$@.d"
-	$(COMPILE.cc) -O2 -DHAVE_CUBLAS -DADD_ -I/usr/local/cuda/include -I/usr/local/magma/include -I. -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/xmagma_test1.o tests/xmagma_test1.cpp
+	$(COMPILE.cc) -O2 -DADD_ -DHAVE_CUBLAS -I/usr/local/cuda/include -I/usr/local/magma/include -I. -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/xmagma_test1.o tests/xmagma_test1.cpp
 
 
 # Run Test Targets
