@@ -30,18 +30,18 @@
 #include "xmagma_operations.h"
 
 namespace xmagma {
-    template< typename L, typename R, Oper O >
+    template< typename L, typename R, Oper O, typename M > // M for Major
     class VectorExpression {
-        typedef VectorExpression< const L,  const R, O > SelfType;
+        typedef VectorExpression< const L,  const R, O, M > SelfType;
     public: 
         typedef magma_int_t size_type;
         // Constructor (no default constructor for vector expression}
         VectorExpression( L& lhs, R& rhs ): lhs_( lhs ), rhs_( rhs ) {}
         // - expression( A )
-        VectorExpression< const SelfType, const SelfType,  M_NEGATIVE > 
+        VectorExpression< const SelfType, const SelfType,  M_NEGATIVE, M > 
         operator-() const {
             return VectorExpression< const SelfType, 
-                const SelfType, M_NEGATIVE >
+                const SelfType, M_NEGATIVE, M >
                 ( *this, *this );
         }
         // Get operants
@@ -61,7 +61,7 @@ namespace xmagma {
      * queue: #optional queue where it lives
      */
     // Constructor
-    template< typename T, VecType M > Vector< T, M >::Vector( size_type len, 
+    template< typename T, typename M > Vector< T, M >::Vector( size_type len, 
             magma_queue_t queue ): 
             size1_( len ), size2_( 1 ) {
         if ( size1_> 0 ) {
@@ -69,10 +69,10 @@ namespace xmagma {
         }
     }
     // Construct a vector from vector expression
-    template< typename T, VecType M > 
+    template< typename T, typename M > 
     template< typename L, typename R, Oper O >
     Vector< T, M >::Vector(const 
-        VectorExpression< const L, const R, O >& proxy ):
+        VectorExpression< const L, const R, O, M >& proxy ):
         size1_( proxy.size1() ), size2_( 1 ) {
         if ( size1_ > 0 ) {
             mem_creator< T >( &elements_, size1_ );
@@ -80,7 +80,7 @@ namespace xmagma {
         }
     }
     // Construct from another vector
-    template< typename T, VecType M >
+    template< typename T, typename M >
     Vector< T, M >::Vector( const SelfType& other ) :
     size1_( other.size1() ), size2_( 1 ) {
         if ( size1_ > 0 ) {
@@ -90,7 +90,7 @@ namespace xmagma {
     }
     /* vector operations */
     // v1 = v2
-    template< typename T, VecType M >
+    template< typename T, typename M >
     Vector< T, M > & Vector< T, M >::operator=( const SelfType& other ) {
         if( &other == this ){
             return *this;
@@ -114,10 +114,10 @@ namespace xmagma {
         return *this;
     }
     // v1 = expression( v2 )
-    template< typename T, VecType M >
+    template< typename T, typename M >
     template< typename L, typename R, Oper O >
     Vector< T, M >& Vector< T, M >::operator=( const VectorExpression<
-        const L, const R, O >& proxy ) {
+        const L, const R, O, M >& proxy ) {
         assert( ( proxy.size1() == size1() || size1() == 0 )
                 && ( proxy.size2() == size2() || size2() == 0 )
                 && bool( "dimension doesn't match!" ) );
@@ -127,7 +127,7 @@ namespace xmagma {
             mem_creator< T >( &elements_, size1_ );
         }
         OpExecutor< SelfType, V_ASSIGN, VectorExpression< const L, const R,
-                O > >::apply( *this, proxy );
+                O, M > >::apply( *this, proxy );
         return *this;
     }
     
