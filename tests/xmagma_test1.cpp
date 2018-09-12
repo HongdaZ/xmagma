@@ -358,7 +358,16 @@ xMat6 + ( xMat6 + xMat6 );
    xmagma::Vector< double, xmagma::COL > xV3( xV2 );
    printf( "xV3\n");
    print( xV3 );
+   xmagma::Vector< double, xmagma::COL > xV4;
+   xV4 = xV3; 
+   printf( "xV4\n");
+   print( xV4 );
 
+   xmagma::Vector< double, xmagma::ROW > xV5( 4 );
+   xmagma::copy( rv1, xV5 );
+   printf( "xV5\n");
+   print( xV5 );
+   
 
    magma_free_cpu (a); // free host memory
    magma_free (d_a ); // free device memory
