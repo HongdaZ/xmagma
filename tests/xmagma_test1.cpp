@@ -385,6 +385,9 @@ xMat6 + ( xMat6 + xMat6 );
    xV1 = 6;
    printf( "xV1\n");
    print( xV1 );
+   xV6 = xV6 * xMat6;
+   printf( "xV6\n");
+   print( xV6 );
 
    magma_free_cpu (a); // free host memory
    magma_free (d_a ); // free device memory

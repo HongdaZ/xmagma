@@ -80,7 +80,7 @@ namespace xmagma {
         SelfType& operator=( const VectorExpression< const Vector< T, M >,
                 const MatrixExpression< const Matrix< T >,
                 const Matrix< T >, M_TRANS >,
-                 MV_MULT, M >& proxy );
+                 VM_MULT, M >& proxy );
         
         // v1 += v2
         template< typename L, typename R, Oper O>

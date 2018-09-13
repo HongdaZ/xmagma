@@ -241,6 +241,34 @@ namespace xmagma {
         }
         return *this;
     }
+    //  x * t( A )             row vector x 
+    template< typename T >
+    VectorExpression< const Vector< T, ROW >, const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >, VM_MULT, ROW >
+    operator*( const Vector< T, ROW >& x, const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >& A ) {
+        return VectorExpression< const Vector< T, ROW >, const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >, VM_MULT,
+                ROW >
+                ( x, A );
+    }
+    // y = x * t( A )       row vector x
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator=( const
+    VectorExpression< const Vector< T, M >, const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >, VM_MULT, M >& 
+    proxy ) {
+        magma_int_t size = proxy.size1();
+        assert( size == size1() && bool( "Vectors have different length" ) );
+        if( aliasing( *this, proxy.lhs() ) ) {
+            Vector< T, M > result( size );
+            mv_mult( proxy.rhs().lhs(), proxy.lhs(), result, MagmaNoTrans, 1, 0 );
+            *this = result;
+        } else {
+            mv_mult( proxy.rhs(), proxy.lhs(), *this, MagmaNoTrans, 1, 0 );
+        }
+        return *this;
+    }
 }
 
 #endif /* XMAGMA_VECTOR_EXPRESSION_H */
