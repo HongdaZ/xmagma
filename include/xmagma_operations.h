@@ -35,33 +35,16 @@ namespace xmagma{
                 Backend::get_queue()  );
     }
     /* Copy vector */
-    template< typename T, VecType Major > 
-    void copy_vector( const Vector< T, Major >& v1, 
-            Vector< T, Major >& v2 ){ };
-    template<>
-    void copy_vector< float, ROW >( const Vector< float, ROW >& v1,
-            Vector< float, ROW >& v2 ){
+    template< VecType M1, VecType M2 > 
+    void copy_vector( const Vector< float, M1 >& v1, 
+            Vector< float, M2 >& v2 ){
         magma_scopyvector( v1.size(), v1.get_pointer(), 1,
                 v2.get_pointer(), 1,
                 Backend::get_queue()  );
     }
-    template<>
-    void copy_vector< float, COL >( const Vector< float, COL >& v1,
-            Vector< float, COL >& v2 ){
-        magma_scopyvector( v1.size(), v1.get_pointer(), 1,
-                v2.get_pointer(), 1,
-                Backend::get_queue()  );
-    }
-    template<>
-    void copy_vector< double, ROW >( const Vector< double, ROW >& v1,
-            Vector< double, ROW >& v2 ){
-        magma_dcopyvector( v1.size(), v1.get_pointer(), 1,
-                v2.get_pointer(), 1,
-                Backend::get_queue()  );
-    }
-    template<>
-    void copy_vector< double, COL >( const Vector< double, COL >& v1,
-            Vector< double, COL >& v2 ){
+    template< VecType M1, VecType M2 > 
+    void copy_vector( const Vector< double, M1 >& v1, 
+            Vector< double, M2 >& v2 ){
         magma_dcopyvector( v1.size(), v1.get_pointer(), 1,
                 v2.get_pointer(), 1,
                 Backend::get_queue()  );
@@ -247,7 +230,21 @@ namespace xmagma{
                 B.get_pointer(), B.ld(), b, C.get_pointer(), C.ld(), 
                 Backend::get_queue() );
     }
-            
+    // y = A * x
+    template< VecType M >
+    void mv_mult( const Matrix< float >& A, const Vector< float, M >& x,
+            Vector< float, M >& y, magma_trans_t transA, 
+            float a, float b ) {
+        magmablas_sgemv( transA, A.size1(), A.size2(), a, A.get_pointer(),
+                A.ld(), x.get_pointer(), 1, b, y.get_pointer(), 1, Backend::get_queue() );
+    }
+    template< VecType M >
+    void mv_mult( const Matrix< double >& A, const Vector< double, M >& x,
+            Vector< double, M >& y, magma_trans_t transA, 
+            double a, double b ) {
+        magmablas_dgemv( transA, A.size1(), A.size2(), a, A.get_pointer(),
+                A.ld(), x.get_pointer(), 1, b, y.get_pointer(), 1, Backend::get_queue() );
+    }
     // inplace_sub
     template< typename T >
     void inplace_sub( Matrix< T >& b, const Matrix< T >& a,
@@ -276,6 +273,17 @@ namespace xmagma{
     void set_const( Matrix< double >& A, double a ) {
         magmablas_dlaset( MagmaFull, A.size1(), A.size2(), a, a, A.get_pointer(),
                 A.ld(), Backend::get_queue() );
+    }
+    // set all elements of a vector to be a constant value
+    template< VecType M >
+    void set_const(  Vector< float, M >& v, float a ) {
+        magmablas_slaset( MagmaFull, v.size1(), 1, a, a, v.get_pointer(),
+                v.size1(), Backend::get_queue() );
+    }
+    template< VecType M >
+    void set_const(  Vector< double, M >& v, double a ) {
+        magmablas_dlaset( MagmaFull, v.size1(), 1, a, a, v.get_pointer(),
+                v.size1(), Backend::get_queue() );
     }
     // scale
     template< typename T >

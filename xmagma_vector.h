@@ -43,7 +43,7 @@ namespace xmagma {
          * O                   type of operator
          */
         template< typename L, typename R, Oper O >
-        explicit Vector( VectorExpression< const L, const R, O > const& 
+        explicit Vector( VectorExpression< const L, const R, O, M > const& 
             proxy );
         
         /* Deep copy of the Vector */
@@ -54,37 +54,49 @@ namespace xmagma {
         /* Operators whose return value is the reference of the vector 
          * itself
          */
-        // A = B
-        SelfType& operator=( const SelfType& other );
-        // A = a
+        // v = a
         SelfType& operator=( const T a );
+        // v1 = v2
+        SelfType& operator=( const SelfType& other );
         template< typename L, typename R, Oper O>
         SelfType& operator=( const VectorExpression< const L, const R,
-                O >& proxy );
+                O, M >& proxy );
+        // v1 = trans( v2 )
+        template< VecType M2 >
+        SelfType& operator=( const VectorExpression< const Vector< T, M2 >,
+                const Vector< T, M2 >, V_TRANS, M >& proxy );
         /* Matrix-vector operations */
         // v1 = A * v2
         SelfType& operator=( const VectorExpression< const Matrix< T >,
-                const Vector< T, COL >, MV_MULT >& proxy );
+                const Vector< T, M >, MV_MULT, M >& proxy );
+        // v1 = v2 * A
+        SelfType& operator=( const VectorExpression< const Vector< T, M >,
+                const Matrix< T >, VM_MULT, M >& proxy );
         // v1 = t( A ) * v2
         SelfType& operator=( const VectorExpression< const MatrixExpression<
         const Matrix< T >, const Matrix< T >, M_TRANS >,
-                const Vector< T, COL >, MV_MULT >& proxy );
+                const Vector< T, M >, MV_MULT, M >& proxy );
+        // v1 = v2 * t( A )
+        SelfType& operator=( const VectorExpression< const Vector< T, M >,
+                const MatrixExpression< const Matrix< T >,
+                const Matrix< T >, M_TRANS >,
+                 MV_MULT, M >& proxy );
         
-        // A += B
+        // v1 += v2
         template< typename L, typename R, Oper O>
         SelfType& operator+=( const VectorExpression< const L,
-                const R, O> & proxy );
+                const R, O, M > & proxy );
         SelfType& operator+=( const SelfType& other );
-        // A -= B;
+        // v1 -= v2
         template< typename L, typename R, Oper O >
         SelfType& operator-=( const VectorExpression< const L,
-                const R, O >& proxy );
+                const R, O, M >& proxy );
         SelfType& operator-=( const SelfType& other );
-        // A *= a inplace scale a Vector
+        // v1 *= a inplace scale a Vector
         SelfType& operator*=( T );
         SelfType& operator/=( T );
-        // -A
-        VectorExpression< const SelfType, const SelfType, V_NEGATIVE > 
+        // -v1
+        VectorExpression< const SelfType, const SelfType, V_NEGATIVE, M > 
         operator-() const;
         
         /* Return dimensions of the vector */
@@ -100,10 +112,10 @@ namespace xmagma {
         size_type size2_; // 1
     };  //Vector
     // print Vector
-    template< typename T, VecType Major >
-    void print( Vector< T, Major >& a ) {};
-    template< VecType Major >
-    void print( Vector< float, Major >& a ) {
+    template< typename T, VecType M >
+    void print( Vector< T, M >& a ) {};
+    template<>
+    void print( Vector< float, ROW >& a ) {
         float* b;
         magma_int_t m = a.size();
         magma_smalloc_cpu ( &b , m ); // host memory for a
@@ -112,8 +124,22 @@ namespace xmagma {
                 Backend::get_queue() );
         std::cout << temp;
     };
-    template< VecType Major >
-    void print( Vector< double, Major >& a ) {
+    template<>
+    void print( Vector< float, COL >& a ) {
+        float* b;
+        magma_int_t m = a.size();
+        magma_smalloc_cpu ( &b , m ); // host memory for a
+        RVector< float > temp( b, m );
+        magma_sgetvector( a.size(), a.get_pointer(), 1, temp.begin(), 1, 
+                Backend::get_queue() );
+        printf( "[\n" );
+        for( magma_int_t i = 0; i < m; ++i ) {
+            printf( "%f\n", temp[ i ] );
+        }
+        printf( "];\n" );
+    };
+    template<>
+    void print( Vector< double, ROW >& a ) {
         double* b;
         magma_int_t m = a.size();
         magma_dmalloc_cpu ( &b , m ); // host memory for a
@@ -121,6 +147,20 @@ namespace xmagma {
         magma_dgetvector( a.size(), a.get_pointer(), 1, temp.begin(), 1, 
                 Backend::get_queue() );
         std::cout << temp;
+    };
+    template<>
+    void print( Vector< double, COL >& a ) {
+        double* b;
+        magma_int_t m = a.size();
+        magma_dmalloc_cpu ( &b , m ); // host memory for a
+        RVector< double > temp( b, m);
+        magma_dgetvector( a.size(), a.get_pointer(), 1, temp.begin(), 1, 
+                Backend::get_queue() );
+        printf( "[\n" );
+        for( magma_int_t i = 0; i < m; ++i ) {
+            printf( "%f\n", temp[ i ] );
+        }
+        printf( "];\n" );
     };
 }
 

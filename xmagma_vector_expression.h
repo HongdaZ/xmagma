@@ -30,7 +30,7 @@
 #include "xmagma_operations.h"
 
 namespace xmagma {
-    template< typename L, typename R, Oper O, typename M > // M for Major
+    template< typename L, typename R, Oper O, VecType M > // M for Major
     class VectorExpression {
         typedef VectorExpression< const L,  const R, O, M > SelfType;
     public: 
@@ -61,7 +61,7 @@ namespace xmagma {
      * queue: #optional queue where it lives
      */
     // Constructor
-    template< typename T, typename M > Vector< T, M >::Vector( size_type len, 
+    template< typename T, VecType M > Vector< T, M >::Vector( size_type len, 
             magma_queue_t queue ): 
             size1_( len ), size2_( 1 ) {
         if ( size1_> 0 ) {
@@ -69,7 +69,7 @@ namespace xmagma {
         }
     }
     // Construct a vector from vector expression
-    template< typename T, typename M > 
+    template< typename T, VecType M > 
     template< typename L, typename R, Oper O >
     Vector< T, M >::Vector(const 
         VectorExpression< const L, const R, O, M >& proxy ):
@@ -80,7 +80,7 @@ namespace xmagma {
         }
     }
     // Construct from another vector
-    template< typename T, typename M >
+    template< typename T, VecType M >
     Vector< T, M >::Vector( const SelfType& other ) :
     size1_( other.size1() ), size2_( 1 ) {
         if ( size1_ > 0 ) {
@@ -89,8 +89,14 @@ namespace xmagma {
         }
     }
     /* vector operations */
+    // v = a
+    template< typename T, VecType M >
+    Vector< T, M > & Vector< T, M >::operator=( const T a ) {
+        set_const( *this, a );
+        return *this;
+    }
     // v1 = v2
-    template< typename T, typename M >
+    template< typename T, VecType M >
     Vector< T, M > & Vector< T, M >::operator=( const SelfType& other ) {
         if( &other == this ){
             return *this;
@@ -103,18 +109,18 @@ namespace xmagma {
             size1_ = other.size1();
             size2_ = 1;
             mem_creator< T >( &elements_, size1_ );
-            copy_vector< T >( other, *this );
+            copy_vector< M, M >( other, *this );
             return *this;
         }
         if ( other.size1() == size1_ ) {
-            copy_vector< T >( other, *this );
+            copy_vector< M, M >( other, *this );
         } else {
             printf( "dimension doesn't match \n" );
         }
         return *this;
     }
     // v1 = expression( v2 )
-    template< typename T, typename M >
+    template< typename T, VecType M >
     template< typename L, typename R, Oper O >
     Vector< T, M >& Vector< T, M >::operator=( const VectorExpression<
         const L, const R, O, M >& proxy ) {
@@ -130,7 +136,111 @@ namespace xmagma {
                 O, M > >::apply( *this, proxy );
         return *this;
     }
-    
+    // v1 = t( v2 )
+    template< typename T, VecType M1 >
+    template< VecType M2 >
+    Vector< T, M1 >& Vector< T, M1 >::operator=( const VectorExpression< 
+    const Vector< T, M2 >,
+    const Vector< T, M2 >, V_TRANS, M1 >& proxy ) {
+        if( M1 != M2 && elements_ != proxy.lhs().get_pointer() ) {
+            // lhs is empty vector
+            if ( size1_ == 0 ) {
+                size1_ = proxy.lhs().size2();
+                size2_ = proxy.lhs().size1();
+                magma_int_t len = size1_ > size2_ ? size1_ : size2_;
+                mem_creator< T >( &elements_, len );
+                copy_vector( proxy.lhs(), *this );
+            } else {
+                // dimension not match
+                if ( size1_ == proxy.lhs().size2() && 
+                    size2_ == proxy.lhs().size1() ) {
+                    copy_vector( proxy.lhs(), *this );
+                }
+            }
+        }
+        return *this;
+    }
+    /* Matrix-vector multiplication */
+    // A * x
+    template< typename T >
+    VectorExpression< const Matrix< T >, const Vector< T, COL >, MV_MULT, COL >
+    operator*( const Matrix< T >& A, const Vector< T, COL >& x ) {
+        return VectorExpression< const Matrix< T >, const Vector< T, COL >, MV_MULT,
+                COL >
+                ( A, x );
+    }
+    // y = A * x
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator=( const
+    VectorExpression< const Matrix< T >, const Vector< T, M >, MV_MULT, M >& 
+    proxy ) {
+        magma_int_t size = proxy.size1();
+        assert( size == size1() && bool( "Vectors have different length" ) );
+        if( aliasing( *this, proxy.rhs() ) ) {
+            Vector< T, M > result( size );
+            mv_mult( proxy.lhs(), proxy.rhs(), result, MagmaNoTrans, 1, 0 );
+            *this = result;
+        } else {
+            mv_mult( proxy.lhs(), proxy.rhs(), *this, MagmaNoTrans, 1, 0 );
+        }
+        return *this;
+    }
+    //  x * A (row vector)
+    template< typename T >
+    VectorExpression< const Vector< T, ROW >, const Matrix< T >, VM_MULT, ROW >
+    operator*( const Vector< T, ROW >& x, const Matrix< T >& A ) {
+        return VectorExpression< const Vector< T, ROW >, const Matrix< T >, VM_MULT,
+                ROW >
+                ( x, A );
+    }
+    // y = x * A (row vector)
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator=( const
+    VectorExpression< const Vector< T, M >, const Matrix< T >, VM_MULT, M >& 
+    proxy ) {
+        magma_int_t size = proxy.size1();
+        assert( size == size1() && bool( "Vectors have different length" ) );
+        if( aliasing( *this, proxy.lhs() ) ) {
+            Vector< T, M > result( size );
+            mv_mult( proxy.rhs(), proxy.lhs(), result, MagmaTrans, 1, 0 );
+            *this = result;
+        } else {
+            mv_mult( proxy.rhs(), proxy.lhs(), *this, MagmaTrans, 1, 0 );
+        }
+        return *this;
+    }
+    // t( A ) * x
+    template< typename T >
+    VectorExpression< const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >, 
+            const Vector< T, COL >, MV_MULT, COL >
+    operator*( const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >& A, 
+            const Vector< T, COL >& x ) {
+        return VectorExpression< const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >, const Vector< T, COL >, 
+                MV_MULT,
+                COL >
+                ( A, x );
+    }
+    // y = t( A ) * x
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator=( const
+    VectorExpression< const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >,
+            const Vector< T, M >, MV_MULT, M >& 
+    proxy ) {
+        magma_int_t size = proxy.size1();
+        assert( size == size1() && bool( "Vectors have different length" ) );
+        if( aliasing( *this, proxy.rhs() ) ) {
+            Vector< T, M > result( size );
+            mv_mult( proxy.lhs().lhs(), proxy.rhs(), result, MagmaTrans, 1, 0 );
+            *this = result;
+        } else {
+            mv_mult( proxy.lhs().lhs(), proxy.rhs(), *this, MagmaTrans, 1, 0 );
+        }
+        return *this;
+    }
 }
 
 #endif /* XMAGMA_VECTOR_EXPRESSION_H */

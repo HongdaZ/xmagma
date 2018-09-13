@@ -75,6 +75,13 @@ namespace xmagma {
         static magma_int_t size( const AnyMatrix& lhs,
             const AnyVector& rhs ) { return lhs.size1(); }
     };
+    // v * A
+    template< typename AnyVector, typename AnyMatrix > 
+    class VectorSize< const AnyVector, const AnyMatrix, VM_MULT > {
+        public:
+        static magma_int_t size( const AnyVector& lhs,
+            const AnyMatrix& rhs ) { return lhs.size1(); }
+    };
     // v * a 
     template< typename AnyVector, typename T > 
     class VectorSize< const AnyVector, const T, M_SCALE > {
@@ -104,17 +111,17 @@ namespace xmagma {
         return aliasing( A, B.lhs() ) || aliasing( A, B.rhs() );
     }
     // Check aliasing of vectors
-    template< typename T, typename B, VecType Major >
-    bool aliasing( const Vector< T, Major >&, const B& ) {
+    template< typename T, typename B, VecType M >
+    bool aliasing( const Vector< T, M >&, const B& ) {
         return false;
     }
-    template< typename T, VecType Major >
-    bool aliasing( const Vector< T, Major >& A, const Vector< T, Major >& B ) {
+    template< typename T, VecType M >
+    bool aliasing( const Vector< T, M >& A, const Vector< T, M >& B ) {
         return A.get_pointer() == B.get_pointer();
     }
-    template< typename T, typename L, typename R, Oper O, VecType Major >
-    bool aliasing( const Vector< T, Major >& A, const VectorExpression< const 
-    L, const R, O >& B ) {
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    bool aliasing( const Vector< T, M >& A, const VectorExpression< const 
+    L, const R, O, M >& B ) {
         return aliasing( A, B.lhs() ) || aliasing( A, B.rhs() );
     }
 } // xmagma                                                                                                     
