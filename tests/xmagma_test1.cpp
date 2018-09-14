@@ -363,7 +363,7 @@ xMat6 + ( xMat6 + xMat6 );
    printf( "xV4\n");
    print( xV4 );
 
-   xmagma::Vector< double, xmagma::ROW > xV5( 3 ), xV6 ( 3 );
+   xmagma::Vector< double, xmagma::ROW > xV5( 3 ), xV6 ( 3 ), xV7( 3 );
    xmagma::copy( rv1, xV5 );
    printf( "xV5\n");
    print( xV5 );
@@ -371,6 +371,7 @@ xMat6 + ( xMat6 + xMat6 );
    printf( "xMat6\n");
    double c[ 3 ] = { 0.561985, -107.274344, 5.306721 };
    xmagma::RVector< double > rv2( &c[ 0 ], 3 );
+   transfer_vector( rv2, xV7 );
    transfer_vector( rv2, xV4 );
    print( xMat6 );
    xV4 = xMat6 * xV4;
@@ -388,6 +389,20 @@ xMat6 + ( xMat6 + xMat6 );
    xV6 = xV6 * xMat6;
    printf( "xV6\n");
    print( xV6 );
+   xV6 += xV5;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 -= xV7;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 *= 5;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 /= 100;
+   printf( "xV6\n");
+   print( xV6 );
+   
+   
 
    magma_free_cpu (a); // free host memory
    magma_free (d_a ); // free device memory
