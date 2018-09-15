@@ -13,10 +13,10 @@
 #include "xmagma_R_array.h"
 #include "xmagma_backend.h"
 #include "xmagma_vector.h"
-
+#include "xmagma_vector_expression.h"
 namespace xmagma{
-    
-    /* Copy matrix */
+    /* Communicate */
+    // Copy matrix 
     template< typename T > 
     void copy_matrix( const Matrix< T >& mat1, 
             Matrix< T >& mat2 ){ };
@@ -34,7 +34,7 @@ namespace xmagma{
                 mat1.ld(), mat2.get_pointer(), mat2.ld(), 
                 Backend::get_queue()  );
     }
-    /* Copy vector */
+    // Copy vector
     template< VecType M1, VecType M2 > 
     void copy_vector( const Vector< float, M1 >& v1, 
             Vector< float, M2 >& v2 ){
@@ -49,7 +49,7 @@ namespace xmagma{
                 v2.get_pointer(), 1,
                 Backend::get_queue()  );
     }
-    /* Transfer matrix from host to device */
+    // Transfer matrix from host to device
     template< typename T > 
     void transfer_matrix( RMatrix< T >& mat1, 
             Matrix< T >& mat2 ){};
@@ -67,7 +67,7 @@ namespace xmagma{
                 mat1.size1(), mat2.get_pointer(), mat2.ld(), 
                 Backend::get_queue()  );
     }
-    /* Transfer vector from host to device */
+    // Transfer vector from host to device
     template< typename T, VecType M > 
     void transfer_vector( RVector< T >& v1, 
             Vector< T, M >& v2 ){};
@@ -95,7 +95,7 @@ namespace xmagma{
         magma_dsetvector( v1.size(), v1.begin(), 1, v2.get_pointer(), 1,
                 Backend::get_queue()  );
     }
-    /* Transfer matrix from device to host */
+    // Transfer matrix from device to host 
     template< typename T > 
     void transfer_matrix( Matrix< T >& mat1, RMatrix< T >& mat2 ){};
     template<>
@@ -112,7 +112,7 @@ namespace xmagma{
                 mat1.ld(), mat2.begin(), mat2.size1(), 
                 Backend::get_queue()  );
     }
-    /* Transfer vector from device to host */
+    // Transfer vector from device to host
     template< typename T, VecType M > 
     void transfer_vector( Vector< T, M >& v1, RVector< T >& v2 ){};
     template<>
@@ -185,6 +185,20 @@ namespace xmagma{
             const double s ) {
         magmablas_dgeadd( a.size1(), a.size2(), s, a.get_pointer(), a.ld(),
                 b.get_pointer(), b.ld(), Backend::get_queue() );
+    }
+    // inplace add vector
+    // y = a * x + y
+    template< VecType M >
+    void inplace_add( Vector< float, M >& y, const Vector< float, M >& x,
+            float a ) {
+        magma_saxpy( y.size(), a, x.get_pointer(), 1, 
+                y.get_pointer(), 1, Backend::get_queue() );
+    }
+    template< VecType M >
+    void inplace_add( Vector< double, M >& y, const Vector< double, M >& x,
+            double a ) {
+        magma_daxpy( y.size(), a, x.get_pointer(), 1, 
+                y.get_pointer(), 1, Backend::get_queue() );
     }
     // inplace add2
     template< typename T >
@@ -286,6 +300,7 @@ namespace xmagma{
                 v.size1(), Backend::get_queue() );
     }
     // scale
+    // scale matrix
     template< typename T >
     void scale( Matrix< T >& a, T alpha ) {};
     template<>
@@ -302,6 +317,48 @@ namespace xmagma{
                 a.size2(), a.get_pointer(), a.ld(), Backend::get_queue(),
                 &info );
     }
+    // scale vector
+    template< VecType M >
+    void scale( Vector< float, M >& x, float a ) {
+        magma_sscal( x.size(), a, x.get_pointer(), 1, Backend::get_queue() );
+    }
+    template< VecType M >
+    void scale( Vector< double, M >& x, double a ) {
+        magma_dscal( x.size(), a, x.get_pointer(), 1, Backend::get_queue() );
+    }
+    // vector inner product: x * y
+    template< VecType M1, VecType M2 >
+    void v_inner( const Vector< float, M1 >& x, 
+            const Vector< float, M2 >& y, float& p ) {
+        magma_sdot( x.size(), x.get_pointer(), 1, y.get_pointer(), 1, 
+                Backend::get_queue() );
+    }
+    template< VecType M1, VecType M2 >
+    void v_inner( const Vector< double, M1 >& x, 
+            const Vector< double, M2 >& y, double& p ) {
+        p = magma_ddot( x.size(), x.get_pointer(), 1, y.get_pointer(), 1, 
+                Backend::get_queue() );
+    }
+    template< typename T >
+    T operator*( const Vector< T, ROW>& x, const Vector< T, COL >& y ) {
+       T p;
+       v_inner( x, y, p );
+       return p;
+    }
+    // outer product
+    template< VecType M1, VecType M2 >
+    void v_outer( const Vector< float, M1 >& x, const Vector< float, M2 >& y,
+            Matrix< float >& A, float a = 1 ) {
+        magma_sger( x.size(), y.size(), a, x.get_pointer(), 1, y.get_pointer(), 
+                1, A.get_pointer(), A.ld(), Backend::get_queue() );
+    }
+    template< VecType M1, VecType M2 >
+    void v_outer( const Vector< double, M1 >& x, const Vector< double, M2 >& y,
+            Matrix< double >& A, double a = 1 ) {
+        magma_dger( x.size(), y.size(), a, x.get_pointer(), 1, y.get_pointer(), 
+                1, A.get_pointer(), A.ld(), Backend::get_queue() );
+    }
+    /* Matrix expressions */
     // expression( A ) + expression( B )
     template< typename L1, typename R1, Oper O1,
                      typename L2, typename R2, Oper O2 >
@@ -522,6 +579,181 @@ namespace xmagma{
     < const LL, const LR, LO >, const MatrixExpression
     < const RL, const RR, RO >, M_MULT >
                 ( A, B );
+    }
+    /* Vector expressions */
+    // expression( x ) + expression( y )
+    template< typename L1, typename R1, Oper O1, VecType M,
+            typename L2, typename R2, Oper O2 >
+    VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
+            const VectorExpression< const L2, const R2, O2, M >, V_ADD, M >
+    operator+( const VectorExpression< const L1, const R1, O1, M >& x, 
+            const VectorExpression< const L2, const R2, O2, M >& y ) {
+        assert( x.size1() == y.size1() &&
+            bool( "Vectors have different lengths" ) );
+        return VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
+            const VectorExpression< const L2, const R2, O2, M >, V_ADD, M >
+                ( x, y );
+    }
+    // expression( x ) + y
+    template< typename L, typename R, Oper O, VecType M, typename T >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const Vector< T, M >, V_ADD, M >
+    operator+( const VectorExpression< const L, const R, O, M >& x, 
+            const Vector< T, M >& y ) {
+        assert( x.size1() == y.size1() && 
+            bool( "Vectors have different lengths" ) );
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >, 
+                const Vector< T, M >, V_ADD, M>( x, y );
+    }
+    // x + expression( y ) = expression( y ) + x
+    template< typename L, typename R, Oper O, VecType M, typename T >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const Vector< T, M >, V_ADD, M >
+    operator+( const Vector< T, M >& y,
+            const VectorExpression< const L, const R, O, M >& x ) {
+        assert( x.size1() == y.size1() && 
+            bool( "Vectors have different lengths" ) );
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >, 
+                const Vector< T, M >, V_ADD, M>( x, y );
+    }
+    // x + y
+    template< typename T, VecType M >
+    VectorExpression< const Vector< T, M >, const Vector< T, M >, V_ADD, M >
+    operator+( const Vector< T, M >& x, const Vector< T, M >& y ) {
+        return VectorExpression< const Vector< T, M >, 
+                const Vector< T, M >, V_ADD, M >( x, y );
+    }
+    // expression( x ) - expression( y )
+    template< typename L1, typename R1, Oper O1, VecType M,
+            typename L2, typename R2, Oper O2 >
+    VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
+            const VectorExpression< const L2, const R2, O2, M >, V_SUB, M >
+    operator-( const VectorExpression< const L1, const R1, O1, M >& x, 
+            const VectorExpression< const L2, const R2, O2, M >& y ) {
+        assert( x.size1() == y.size1() &&
+            bool( "Vectors have different lengths" ) );
+        return VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
+            const VectorExpression< const L2, const R2, O2, M >, V_SUB, M >
+                ( x, y );
+    }
+    // expression( x ) - y
+    template< typename L, typename R, Oper O, VecType M, typename T >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const Vector< T, M >, V_SUB, M >
+    operator-( const VectorExpression< const L, const R, O, M >& x, 
+            const Vector< T, M >& y ) {
+        assert( x.size1() == y.size1() && 
+            bool( "Vectors have different lengths" ) );
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >, 
+                const Vector< T, M >, V_SUB, M>( x, y );
+    }
+    // x - expression( y )
+    template< typename L, typename R, Oper O, VecType M, typename T >
+    VectorExpression< const Vector< T, M >,
+            const VectorExpression< const L, const R, O, M >,
+            V_SUB, M >
+    operator-( const Vector< T, M >& x, 
+            const VectorExpression< const L, const R, O, M >& y ) {
+        return VectorExpression< const Vector< T, M >,
+                const VectorExpression< const L, const R, O, M >,
+                V_SUB, M >( x, y );
+    }
+    // x - y
+    template< typename T, VecType M >
+    VectorExpression< const Vector< T, M >, const Vector< T, M >, V_SUB, M >
+    operator-( const Vector< T, M >& x, const Vector< T, M >& y ) {
+        return VectorExpression< const Vector< T, M >, const Vector< T, M >,
+                V_SUB, M >( x, y ); 
+    }
+    // scale: x * a
+    template< typename T, VecType M, typename S >
+    VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+    operator*( const Vector< T, M >& x, const S& a ) {
+        return VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+                ( x, a );
+    }
+    // expression( x ) * a;
+    template< typename L, typename R, Oper O, typename S, VecType M >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const S, V_SCALE, M >
+    operator*( const VectorExpression< const L, const R, O, M >& proxy, 
+            const S& a ) {
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >,
+            const S, V_SCALE, M >( proxy,  a );
+    }
+    // a * x = x * a
+    template< typename T, VecType M, typename S >
+    VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+    operator*( const S& a, const Vector< T, M >& x ) {
+        return VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+                ( x, a );
+    }
+    // a * expression( x );
+    template< typename L, typename R, Oper O, typename S, VecType M >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const S, V_SCALE, M >
+    operator*( const S& a, 
+            const VectorExpression< const L, const R, O, M >& proxy
+             ) {
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >,
+            const S, V_SCALE, M >( proxy,  a );
+    }
+    // -x
+    template< typename T, VecType M >
+    VectorExpression< const Vector< T, M >, const Vector< T, M >, V_NEGATIVE,
+            M >
+    Vector< T, M >::operator-() const {
+        return VectorExpression< const SelfType, const SelfType,
+                V_NEGATIVE, M >( *this, *this );
+    }
+    // x / a = x * ( 1 / a )
+    template< typename T, typename S, VecType M >
+    VectorExpression< const Vector< T, M >, const S, V_DIV, M >
+    operator/( const Vector< T, M >& x, const S& a ) {
+        assert( a != 0 
+                && bool( "Divided by zero!" ) );
+        return VectorExpression< const Vector< T, M >, const S, V_DIV, M >
+                ( x, a );
+    }
+    // expression( x ) / a
+    template< typename L, typename R, Oper O, typename S, VecType M >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const S, V_DIV, M >
+    operator/( const VectorExpression< const L, const R, O, M >& x,
+            const S& a ) {
+        assert( a != 0 
+                && bool( "Divided by zero!" ) );
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >, const S, V_DIV, M >( x, a );
+    }
+    // t( x )
+    template< typename T >
+    VectorExpression< const Vector< T, COL >, const Vector< T, COL >, V_TRANS,
+            ROW >
+    t( const Vector< T, COL >& x ) {
+        return VectorExpression< const Vector< T, COL >, 
+                const Vector< T, COL >, V_TRANS,
+            ROW >( x, x );
+    }
+    // x * t( y ) 
+    template< typename T >
+    MatrixExpression< const Vector< T, COL >, const Vector< T, COL >, V_OUTER >
+    operator*( const Vector< T, COL >& x, const VectorExpression<
+        const Vector< T, COL >, const Vector< T, COL >, V_TRANS, ROW>& y ) {
+        return MatrixExpression< const Vector< T, COL >, 
+                const Vector< T, COL >, V_OUTER >( x, y.lhs() );
+    }
+    // x * y (COL * ROW)
+    template< typename T >
+    MatrixExpression< const Vector< T, COL >, const Vector< T, COL >, V_OUTER >
+    operator*( const Vector< T, COL >& x, const Vector< T, ROW >& y ) {
+        return MatrixExpression< const Vector< T, COL >, 
+                const Vector< T, COL >, V_OUTER >( x, y.lhs() );
     }
     /* OpExecutor */
     // A = trans( expression )

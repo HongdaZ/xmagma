@@ -401,8 +401,22 @@ xMat6 + ( xMat6 + xMat6 );
    xV6 /= 100;
    printf( "xV6\n");
    print( xV6 );
-   
-   
+   printf( "xV1\n");
+   print( xV1 );
+   xV6 + xV5;
+   xV6 - xV5;
+   xV6 + xV5 - xV5;
+   -xV5;
+   xV1 * t( xV4 );
+   double p;
+   v_inner( xV6, xV4, p );
+   printf( "inner product:%f\n", p );
+   xmagma::Matrix< double > xM8( 3, 3 );
+   xM8 = 0;
+   v_outer( xV4, xV6, xM8 );
+   printf( "xM8\n");
+   print( xM8 );
+   printf( "%f\n", xV6 * xV4 );
 
    magma_free_cpu (a); // free host memory
    magma_free (d_a ); // free device memory

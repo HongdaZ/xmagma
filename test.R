@@ -24,5 +24,16 @@ xMat6 <- xMat6 - t( xMat5 ) %*% t( xMat6 )
 xMat6 <- xMat6 - ( xMat5 - 2 * xMat7 ) %*% t( xMat6 + 3 * xMat7 )
 xV4 <- c( -8, 86, -6 )
 xV5 <- c( 1, 2.55741, -1.18504 )
+xMat6 <- xMat5
+xV4 <- c( 0.561985,
+          -107.274344,
+          5.306721)
 xV4 <- xMat6 %*% xV4
 xV6 <- t( xV5 ) %*% xMat6
+xV4 <- t( xMat6 ) %*% xV4;
+xV6 <-  xV6 %*% xMat6
+xV6 <- xV6 + xV5
+xV7 <- c( 0.561985, -107.274344, 5.306721 )
+xV6 <- xV6 - xV7
+xV6 <- xV6 * 5
+xV6 <- xV6 / 100

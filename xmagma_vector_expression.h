@@ -175,7 +175,7 @@ namespace xmagma {
     VectorExpression< const Matrix< T >, const Vector< T, M >, MV_MULT, M >& 
     proxy ) {
         magma_int_t size = proxy.size1();
-        assert( size == size1() && bool( "Vectors have different length" ) );
+        assert( size == size1() && bool( "Vectors have different lengths" ) );
         if( aliasing( *this, proxy.rhs() ) ) {
             Vector< T, M > result( size );
             mv_mult( proxy.lhs(), proxy.rhs(), result, MagmaNoTrans, 1, 0 );
@@ -267,6 +267,39 @@ namespace xmagma {
         } else {
             mv_mult( proxy.rhs(), proxy.lhs(), *this, MagmaNoTrans, 1, 0 );
         }
+        return *this;
+    }
+    /* Operators as memember functions */
+    // y += v
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator+=( const SelfType& v ) {
+        assert( v.size() == size() && 
+                bool( "Vectors have different lengths") );
+        if( size() > 0 ) {
+            inplace_add( *this, v, 1 );
+        }
+        return *this;
+    }
+    // y -= v
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator-=( const SelfType& v ) {
+        assert( v.size() == size() && 
+                bool( "Vectors have different lengths") );
+        if( size() > 0 ) {
+            inplace_add( *this, v, -1 );
+        }
+        return *this;
+    }
+    // x *=a
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator*=( const T a ) {
+        scale( *this, a );
+        return *this;
+    }
+    // x /= a
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator/=( const T a ) {
+        scale( *this, 1 / a );
         return *this;
     }
 }

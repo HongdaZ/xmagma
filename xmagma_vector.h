@@ -93,8 +93,8 @@ namespace xmagma {
                 const R, O, M >& proxy );
         SelfType& operator-=( const SelfType& other );
         // v1 *= a inplace scale a Vector
-        SelfType& operator*=( T );
-        SelfType& operator/=( T );
+        SelfType& operator*=( const T );
+        SelfType& operator/=( const T );
         // -v1
         VectorExpression< const SelfType, const SelfType, V_NEGATIVE, M > 
         operator-() const;
