@@ -342,6 +342,7 @@ xMat6 + ( xMat6 + xMat6 );
    printf( "xMat6\n" );
    print( xMat6 );
    xMat6 -= ( xMat5 - 2 * xMat7 ) * t( xMat6 + 3 * xMat7 );
+   xMat6 = -( xMat5 + xMat7 );
    printf( "xMat6\n" );
    print( xMat6 );
    /* Vector */
@@ -416,8 +417,54 @@ xMat6 + ( xMat6 + xMat6 );
    v_outer( xV4, xV6, xM8 );
    printf( "xM8\n");
    print( xM8 );
-   printf( "%f\n", xV6 * xV4 );
+   printf( "%f\n", xV6 * xV4 + 1 - 1);
+   xV6 = xV6 + xV5 + 2 * xV7;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = xV6 + xV5 + xV7 * 2;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = xV5 * 2;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = ( xV5 + xV7 ) * 2;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = xV7 / 2;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = ( xV5 + xV7 ) / 2;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = - xV7;
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = ( xV5 + xV5 + xV7 * 2 );
+   printf( "xV6\n");
+   print( xV6 );
+   printf( "xV5\n");
+   print( xV5 );
+   printf( "xV4\n");
+   print( xV4 );
+//   copy_vector( xV4, xV6 );
+   xV6 = t( xV4 );
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = ( xV5 + t( xV4 ) );
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = xV5 + ( - ( xV5 + xV6 ) );
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = xV5 * 2 + ( - ( xV5 + xV6 ) );
+   printf( "xV6\n");
+   print( xV6 );
+   xV6 = xV5 / 2 - ( - (  3 * xV5 + xV6 + t( xV4 ) ) );
+   printf( "xV6\n");
+   print( xV6 );
 
+   
+   
    magma_free_cpu (a); // free host memory
    magma_free (d_a ); // free device memory
 

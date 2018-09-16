@@ -37,3 +37,20 @@ xV7 <- c( 0.561985, -107.274344, 5.306721 )
 xV6 <- xV6 - xV7
 xV6 <- xV6 * 5
 xV6 <- xV6 / 100
+xV6 %*% xV4 
+xV4 %*% xV6
+xV6 <- xV6 + xV5 + 2 * xV7
+xV6 <- xV6 + xV5 + xV7 * 2
+xV6 <- xV5 * 2
+xV6 <- ( xV5 + xV7 )* 2;
+xV6 <- xV7 / 2
+xV6 <- ( xV5 + xV7 ) / 2
+xV6 <- - xV7
+xV6 <- -( xV5 + xV7 ) 
+xV6 <- ( xV5 + xV5 + xV7 * 2 )
+xV6 <- ( xV5 + t( xV4 ) )
+xV6 <- xV5 + ( - ( xV5 + xV6 ) )
+xV6 <- xV5 * 2 + ( - ( xV5 + xV6 ) )
+xV6
+xV6 <- xV5 / 2 - ( - (  3 * xV5 + xV6 + t( xV4 ) ) )
+xV6

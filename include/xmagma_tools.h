@@ -66,7 +66,7 @@ namespace xmagma {
     template< typename L, typename R, Oper O > 
     class VectorSize {
     public: 
-        static magma_int_t size( L& lhs, R& rhs ) { return lhs.size(); }
+        static magma_int_t size( L& lhs, R& rhs ) { return lhs.size1(); }
     };
     // A * v
     template< typename AnyMatrix, typename AnyVector > 

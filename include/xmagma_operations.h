@@ -40,14 +40,14 @@ namespace xmagma{
             Vector< float, M2 >& v2 ){
         magma_scopyvector( v1.size(), v1.get_pointer(), 1,
                 v2.get_pointer(), 1,
-                Backend::get_queue()  );
+                Backend::get_queue() );
     }
     template< VecType M1, VecType M2 > 
     void copy_vector( const Vector< double, M1 >& v1, 
             Vector< double, M2 >& v2 ){
         magma_dcopyvector( v1.size(), v1.get_pointer(), 1,
                 v2.get_pointer(), 1,
-                Backend::get_queue()  );
+                Backend::get_queue() );
     }
     // Transfer matrix from host to device
     template< typename T > 
@@ -1051,6 +1051,323 @@ namespace xmagma{
             Vector< T, ROW > temp2( temp1.size1() );
             temp2 = t( temp1 );
             lhs -= temp2;
+        }
+    };
+    /*                        y Oper x * a                         */
+    // y += x * alpha
+    template< typename T, typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    const Vector< T, M >, const S, V_SCALE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const Vector< T, M >, const S, V_SCALE, M >& proxy ) {
+                inplace_add( lhs, proxy.lhs(),  T( proxy.rhs() ) );
+        }
+    };
+    // y += - x  
+    template< typename T, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M> > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M>& proxy ) {
+                inplace_add( lhs, proxy.lhs(),  T( - 1 )  );
+        }
+    };
+    // y -= x * alpha
+    template< typename T, typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    const Vector< T, M >, const S, V_SCALE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const Vector< T, M >, const S, V_SCALE, M >& proxy ) {
+                inplace_add( lhs, proxy.lhs(),  - T( proxy.rhs() ) );
+        }
+    };
+    // y -= - x 
+    template< typename T, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M >& proxy ) {
+                inplace_add( lhs, proxy.lhs(),  T( 1 ) );
+        }
+    };
+    // y = x * a
+    template< typename T, typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression<
+    const Vector< T, M >, const S, V_SCALE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression<
+    const Vector< T, M >, const S, V_SCALE, M >& proxy ) {
+            if( aliasing( lhs, proxy ) ) {
+                scale( lhs, T( proxy.rhs() ) );
+            } else {
+                lhs = 0;
+                inplace_add( lhs, proxy.lhs(), T( proxy.rhs() ) );
+            }
+        }
+    };
+    // y = expression( x ) * a
+    template< typename T, typename L, typename R, Oper O, typename S, 
+            VecType M >
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M >
+        & proxy ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs = temp * proxy.rhs();
+        }
+    };
+    /*                        y Oper x / a                         */
+    // y += x / alpha
+    template< typename T, typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    const Vector< T, M >, const S, V_DIV, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const Vector< T, M >, const S, V_DIV, M >& proxy ) {
+                inplace_add( lhs, proxy.lhs(),  1 / T( proxy.rhs() ) );
+        }
+    };
+    // y += expression( x ) / alpha
+    template< typename T, typename S, typename L, typename R, Oper O, 
+            VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M >&
+        proxy ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs += temp / T( proxy.rhs() );
+        }
+    };
+    // y -= x / alpha
+    template< typename T, typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    const Vector< T, M >, const S, V_DIV, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const Vector< T, M >, const S, V_DIV, M >& proxy ) {
+                inplace_add( lhs, proxy.lhs(),  - 1 / T ( proxy.rhs() ) );
+        }
+    };
+    // y -= expression( x ) / alpha
+    template< typename T, typename S, typename L, typename R, Oper O,
+            VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M >&
+        proxy ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs -= temp / T( proxy.rhs() );
+        }
+    };
+    // y = x / a
+    template< typename T, typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression<
+    const Vector< T, M >, const S, V_DIV, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression<
+    const Vector< T, M >, const S, V_DIV, M >& proxy ) {
+            if( aliasing( lhs, proxy ) ) {
+                scale( lhs, 1 / T( proxy.rhs() ) );
+            } else {
+                lhs = 0;
+                inplace_add( lhs, proxy.lhs(), 1 / T( proxy.rhs() ) );
+            }
+        }
+    };
+    // y = expression( x ) / a
+    template< typename T, typename L, typename R, Oper O,
+            typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M >& 
+        proxy ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs = temp * ( 1 / T ( proxy.rhs() ) );
+        }
+    };
+    // y = - x
+    template< typename T, VecType M >
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression<
+    const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression<
+    const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M >&
+        proxy ) {
+            lhs = - 1 * proxy.lhs();
+        }
+    };
+    // y = - expression( x )
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, 
+            const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, 
+            const VectorExpression< const L, const R, O, M >, 
+                V_NEGATIVE, M >& proxy ) {
+             Vector< T, M > temp( proxy.lhs() );
+            lhs = - 1 * temp;
+        }
+    };
+    // y += expression( x ) * a
+    template< typename T, typename L, typename R, Oper O, 
+            typename S, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M >&
+        proxy  ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs += temp * proxy.rhs();
+        }
+    };
+    // y -= expression( x ) * a
+    template< typename T, typename L, typename R, Oper O, typename S,
+            VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M >&
+        proxy  ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs -= temp * proxy.rhs();
+        }
+    };
+    // y += - expression( x )
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, 
+    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, 
+    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M >& proxy  ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs += temp * (  - 1 );
+        }
+    };
+    // y -= - expression( x )
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, 
+    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+    const VectorExpression< const L, const R, O, M >, 
+    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M >&
+        proxy  ) {
+            Vector< T, M > temp( proxy.lhs() );
+            lhs -= temp * (  - 1 );
+        }
+    };
+    // z += expression( x ) + expression( y )
+    template< typename T, typename L, typename R, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const L, 
+            const R, V_ADD, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+            const R, V_ADD, M >& proxy ) {
+            if( aliasing( lhs, proxy ) ) {
+                Vector< T, M > temp( proxy.lhs() );
+                OpExecutor< Vector< T, M >, V_INPLACE_ADD, R >::apply( 
+                temp, proxy.rhs());
+                lhs += temp;
+            } else {
+                lhs += proxy.lhs();
+                OpExecutor< Vector< T, M >, V_INPLACE_ADD, R >::apply( lhs,
+                        proxy.rhs());
+            }
+        }
+    };
+    // z -= expression( x ) + expression( y )
+    template< typename T, typename L, typename R, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const L, 
+            const R, V_ADD, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+            const R, V_ADD, M >& proxy ) {
+            if( aliasing( lhs, proxy ) ) {
+                Vector< T, M > temp( proxy.lhs() );
+                OpExecutor< Vector< T, M >, V_INPLACE_ADD, R >::apply( 
+                temp, proxy.rhs());
+                lhs -= temp;
+            } else {
+                lhs -= proxy.lhs();
+                OpExecutor< Vector< T, M >, V_INPLACE_SUB, R >::apply( lhs,
+                        proxy.rhs());
+            }
+        }
+    };
+    // z = expression( x ) - expression( y )
+    template< typename T, typename L, typename R, VecType M >
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const L, 
+            const R, V_SUB, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+            const R, V_SUB, M >& proxy ) {
+            if( aliasing( lhs, proxy ) ) {
+                Vector< T, M > temp( proxy.lhs() );
+                OpExecutor< Vector< T, M >, V_INPLACE_SUB, R >::apply( 
+                temp, proxy.rhs());
+                lhs = temp;
+            } else {
+                lhs = proxy.lhs();
+                OpExecutor< Vector< T, M >, V_INPLACE_SUB, R >::apply( lhs,
+                        proxy.rhs());
+            }
+        }
+    };
+    // z += expression( x ) - expression( y )
+    template< typename T, typename L, typename R, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const L, 
+            const R, V_SUB, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+            const R, V_SUB, M >& proxy ) {
+            if( aliasing( lhs, proxy ) ) {
+                Vector< T, M > temp( proxy.lhs() );
+                OpExecutor< Vector< T, M >, V_INPLACE_SUB, R >::apply( 
+                temp, proxy.rhs());
+                lhs += temp;
+            } else {
+                lhs += proxy.lhs();
+                OpExecutor< Vector< T, M >, V_INPLACE_SUB, R >::apply( lhs,
+                        proxy.rhs());
+            }
+        }
+    };
+    // z -= expression( x ) - expression( y )
+    template< typename T, typename L, typename R, VecType M >
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const L, 
+            const R, V_SUB, M > > {
+    public:
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+            const R, V_SUB, M >& proxy ) {
+            if( aliasing( lhs, proxy ) ) {
+                Vector< T, M > temp( proxy.lhs() );
+                OpExecutor< Vector< T, M >, V_INPLACE_SUB, R >::apply( 
+                temp, proxy.rhs());
+                lhs -= temp;
+            } else {
+                lhs -= proxy.lhs();
+                OpExecutor< Vector< T, M >, V_INPLACE_ADD, R >::apply( lhs,
+                        proxy.rhs());
+            }
         }
     };
     /* OpExecutor for Matrix */

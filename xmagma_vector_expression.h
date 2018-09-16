@@ -38,10 +38,10 @@ namespace xmagma {
         // Constructor (no default constructor for vector expression}
         VectorExpression( L& lhs, R& rhs ): lhs_( lhs ), rhs_( rhs ) {}
         // - expression( A )
-        VectorExpression< const SelfType, const SelfType,  M_NEGATIVE, M > 
+        VectorExpression< const SelfType, const SelfType,  V_NEGATIVE, M > 
         operator-() const {
             return VectorExpression< const SelfType, 
-                const SelfType, M_NEGATIVE, M >
+                const SelfType, V_NEGATIVE, M >
                 ( *this, *this );
         }
         // Get operants
@@ -152,12 +152,70 @@ namespace xmagma {
                 copy_vector( proxy.lhs(), *this );
             } else {
                 // dimension not match
-                if ( size1_ == proxy.lhs().size2() && 
-                    size2_ == proxy.lhs().size1() ) {
+                if ( size1_ == proxy.lhs().size1() && 
+                    size2_ == proxy.lhs().size2() ) {
                     copy_vector( proxy.lhs(), *this );
                 }
             }
         }
+        return *this;
+    }
+    // y += expression( x )
+    template< typename T, VecType M >
+    template< typename L, typename R, Oper O >
+    Vector< T, M >& Vector< T, M >::operator+=( 
+        const VectorExpression< const L, const R, O, M >& proxy ) {
+        assert( proxy.size1() == size1_  && proxy.size2() == size2_ 
+                && bool( "dimension not match!" ) );
+        assert( size1_ > 0 && size2_ > 0 
+                && bool( "Vector not initialized!" ) );
+        OpExecutor< SelfType, V_INPLACE_ADD, 
+                VectorExpression< const L, const R, O, M > >::apply( *this, proxy );
+        return *this;
+    }
+    // y -= expression( x )
+    template< typename T, VecType M >
+    template< typename L, typename R, Oper O >
+    Vector< T, M >& Vector< T, M >::operator-=( 
+        const VectorExpression< const L, const R, O, M >& proxy ) {
+        assert( proxy.size1() == size1_  && proxy.size2() == size2_ 
+                && bool( "dimension not match!" ) );
+        assert( size1_ > 0 && size2_ > 0 
+                && bool( "Vector not initialized!" ) );
+        OpExecutor< SelfType, V_INPLACE_SUB, 
+                VectorExpression< const L, const R, O, M > >::apply( *this, proxy );
+        return *this;
+    }
+    // y += v
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator+=( const SelfType& v ) {
+        assert( v.size() == size() && 
+                bool( "Vectors have different lengths") );
+        if( size() > 0 ) {
+            inplace_add( *this, v, 1 );
+        }
+        return *this;
+    }
+    // y -= v
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator-=( const SelfType& v ) {
+        assert( v.size() == size() && 
+                bool( "Vectors have different lengths") );
+        if( size() > 0 ) {
+            inplace_add( *this, v, -1 );
+        }
+        return *this;
+    }
+    // x *=a
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator*=( const T a ) {
+        scale( *this, a );
+        return *this;
+    }
+    // x /= a
+    template< typename T, VecType M >
+    Vector< T, M >& Vector< T, M >::operator/=( const T a ) {
+        scale( *this, 1 / a );
         return *this;
     }
     /* Matrix-vector multiplication */
@@ -269,39 +327,7 @@ namespace xmagma {
         }
         return *this;
     }
-    /* Operators as memember functions */
-    // y += v
-    template< typename T, VecType M >
-    Vector< T, M >& Vector< T, M >::operator+=( const SelfType& v ) {
-        assert( v.size() == size() && 
-                bool( "Vectors have different lengths") );
-        if( size() > 0 ) {
-            inplace_add( *this, v, 1 );
-        }
-        return *this;
-    }
-    // y -= v
-    template< typename T, VecType M >
-    Vector< T, M >& Vector< T, M >::operator-=( const SelfType& v ) {
-        assert( v.size() == size() && 
-                bool( "Vectors have different lengths") );
-        if( size() > 0 ) {
-            inplace_add( *this, v, -1 );
-        }
-        return *this;
-    }
-    // x *=a
-    template< typename T, VecType M >
-    Vector< T, M >& Vector< T, M >::operator*=( const T a ) {
-        scale( *this, a );
-        return *this;
-    }
-    // x /= a
-    template< typename T, VecType M >
-    Vector< T, M >& Vector< T, M >::operator/=( const T a ) {
-        scale( *this, 1 / a );
-        return *this;
-    }
+
 }
 
 #endif /* XMAGMA_VECTOR_EXPRESSION_H */
