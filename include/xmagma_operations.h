@@ -364,16 +364,6 @@ namespace xmagma{
         v_inner( x, temp, p );
         return p;
     }
-    // expression( x ) inner t( y )
-    template< typename T, typename L, typename R, Oper O >
-    T operator*( const VectorExpression< const T, const L , const R, O, ROW >& x,
-            const VectorExpression< const T, const Vector< T, ROW >,
-            const Vector< T, ROW >, V_TRANS, COL >& y ) {
-        T p;
-        Vector< T, ROW > temp1( x );
-        v_inner( temp1, y.lhs(), p );
-        return p;
-    }
     // expression( x ) inner expression( y )
     template< typename T, typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
@@ -943,7 +933,7 @@ namespace xmagma{
         const VectorExpression< const T, const L, const R, O, ROW >,
         const VectorExpression< const T, const L, const R, O, ROW >, V_TRANS,
                 COL >& x ) {
-            Vector< T, COL > temp( x.rhs() );
+            Vector< T, ROW > temp( x.rhs() );
             y = t( temp );
         }
     };
@@ -956,7 +946,7 @@ namespace xmagma{
         const VectorExpression< const T, const L, const R, O, COL >,
         const VectorExpression< const T, const L, const R, O, COL >, V_TRANS,
                 ROW >& x ) {
-            Vector< T, ROW > temp( x.rhs() );
+            Vector< T, COL > temp( x.rhs() );
             y = t( temp );
         }
     };
@@ -2188,9 +2178,26 @@ namespace xmagma{
                     T( - 1 ), T( 1 ) );
         }
     };
-    // 3593
+    /* Matrix-vector products */
+    // y = A * x (COL)
+    template< typename T >
+    class OpExecutor< Vector< T, COL >, V_ASSIGN, 
+            VectorExpression< const T, const Matrix< T >, 
+                const Vector< T, COL >, MV_MULT, COL > > {
+    public:
+        static void apply( Vector< T, COL >& lhs, 
+                const VectorExpression< const T, const Matrix< T >, 
+                    const Vector< T, COL >, MV_MULT, COL >& rhs ) {
+            if( aliasing( lhs, rhs.rhs() ) ) {
+                Vector< T, COL > temp( rhs );
+                lhs = temp;
+            } else {
+                mv_mult( rhs.lhs(), rhs.rhs(), lhs, MagmaNoTrans, 1, 0 );
+            }
+        }
+    };
+    
 }
-
 
 #endif /* XMAGMA_OPERATIONS_H */
 

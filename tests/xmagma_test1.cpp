@@ -470,7 +470,27 @@ xMat6 + ( xMat6 + xMat6 );
    printf( "a3: %f\n", a3 );
    a3 = xV5 * xMat6 * ( t( xV5 ) + xV4 );
    printf( "a3: %f\n", a3 );
-//   xMat6 = xV4 * xV5;
+   double d[ 3 ] = { 1, 3, -2 };
+   xmagma::RVector< double > rv3( &d[ 0 ], 3 );
+   transfer_vector( rv3, xV3 );
+   rv3[ 0 ] = 2;
+   rv3[ 1 ] = 3;
+   rv3[ 2 ] = 5;
+   transfer_vector( rv3, xV4 );
+   rv3[ 0 ] = 7;
+   rv3[ 1 ] = 13;
+   rv3[ 2 ] = 11;
+   transfer_vector( rv3, xV5 );
+   rv3[ 0 ] = 17;
+   rv3[ 1 ] = 19;
+   rv3[ 2 ] = 23;
+   transfer_vector( rv3, xV6 );
+           
+   a3 = t( 2 * xV4 - xV3 / 2 ) * t( 2 * xV5 * 2 / 2 + xV6 * 2 );
+   printf( "a3: %f\n", a3 );
+   xV3 = xMat6 * xV4;
+   printf( "xV3\n");
+   print( xV3 );
 
    
    

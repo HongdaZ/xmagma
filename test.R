@@ -53,4 +53,9 @@ xV6 <- xV5 + ( - ( xV5 + xV6 ) )
 xV6 <- xV5 * 2 + ( - ( xV5 + xV6 ) )
 xV6
 xV6 <- xV5 / 2 - ( - (  3 * xV5 + xV6 + t( xV4 ) ) )
-xV6
+xV6 <- xV5 %*% xMat6 + xV5
+xV5 %*% xMat6 %*% xV4
+xV5 <- t( xV5 )
+xV4 <- t( xV4 )
+xV5 %*% xMat6 %*% t( xV5 )
+xV5 %*% xMat6 %*% ( t( xV5 ) + xV4 )
