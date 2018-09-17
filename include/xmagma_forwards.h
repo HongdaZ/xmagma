@@ -47,7 +47,7 @@ namespace xmagma {
     class Queue;
     template< typename L, typename R, Oper O > 
     class MatrixExpression;
-    template< typename L, typename R, Oper O, VecType M > 
+    template< typename T, typename L, typename R, Oper O, VecType M > 
     class VectorExpression;
     template < typename T > class RVector;
     template < typename T > class RMatrix;

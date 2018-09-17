@@ -120,7 +120,7 @@ namespace xmagma {
         return A.get_pointer() == B.get_pointer();
     }
     template< typename T, typename L, typename R, Oper O, VecType M >
-    bool aliasing( const Vector< T, M >& A, const VectorExpression< const 
+    bool aliasing( const Vector< T, M >& A, const VectorExpression< const T, const 
     L, const R, O, M >& B ) {
         return aliasing( A, B.lhs() ) || aliasing( A, B.rhs() );
     }

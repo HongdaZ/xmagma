@@ -348,7 +348,7 @@ namespace xmagma{
     }
     // expression( x ) inner y
     template< typename T, typename L, typename R, Oper O >
-    T operator*( const VectorExpression< const L , const R, O, ROW >& x,
+    T operator*( const VectorExpression< const T, const L , const R, O, ROW >& x,
             const Vector< T, COL >& y ) {
         T p;
         Vector< T, ROW > temp( x );
@@ -358,7 +358,7 @@ namespace xmagma{
     // x inner expression( y )
     template< typename T, typename L, typename R, Oper O >
     T operator*( const Vector< T, ROW >& x, 
-            const VectorExpression< const L , const R, O, COL >& y ) {
+            const VectorExpression< const T, const L , const R, O, COL >& y ) {
         T p;
         Vector< T, COL > temp( y );
         v_inner( x, temp, p );
@@ -366,8 +366,8 @@ namespace xmagma{
     }
     // expression( x ) inner t( y )
     template< typename T, typename L, typename R, Oper O >
-    T operator*( const VectorExpression< const L , const R, O, ROW >& x,
-            const VectorExpression< const Vector< T, ROW >,
+    T operator*( const VectorExpression< const T, const L , const R, O, ROW >& x,
+            const VectorExpression< const T, const Vector< T, ROW >,
             const Vector< T, ROW >, V_TRANS, COL >& y ) {
         T p;
         Vector< T, ROW > temp1( x );
@@ -375,13 +375,13 @@ namespace xmagma{
         return p;
     }
     // expression( x ) inner expression( y )
-    template< typename L1, typename R1, Oper O1,
+    template< typename T, typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
-    T operator*( const VectorExpression< const L1 , const R1, O1, ROW >& x,
-            const VectorExpression< const L2 , const R2, O2, COL >& y ) {
+    T operator*( const VectorExpression< const T, const L1 , const R1, O1, ROW >& x,
+            const VectorExpression< const T, const L2 , const R2, O2, COL >& y ) {
         T p;
         Vector< T, ROW > temp1( x );
-        Vector< T, ROW > temp2( y );
+        Vector< T, COL > temp2( y );
         v_inner( temp1, temp2, p );
         return p;
     }
@@ -622,273 +622,273 @@ namespace xmagma{
     }
     /* Vector expressions */
     // expression( x ) + expression( y )
-    template< typename L1, typename R1, Oper O1, VecType M,
+    template< typename T, typename L1, typename R1, Oper O1, VecType M,
             typename L2, typename R2, Oper O2 >
-    VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
-            const VectorExpression< const L2, const R2, O2, M >, V_ADD, M >
-    operator+( const VectorExpression< const L1, const R1, O1, M >& x, 
-            const VectorExpression< const L2, const R2, O2, M >& y ) {
+    VectorExpression< const T, const VectorExpression< const T, const L1, const R1, O1, M >,
+            const VectorExpression< const T, const L2, const R2, O2, M >, V_ADD, M >
+    operator+( const VectorExpression< const T, const L1, const R1, O1, M >& x, 
+            const VectorExpression< const T, const L2, const R2, O2, M >& y ) {
         assert( x.size1() == y.size1() &&
             bool( "Vectors have different lengths" ) );
-        return VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
-            const VectorExpression< const L2, const R2, O2, M >, V_ADD, M >
+        return VectorExpression< const T, const VectorExpression< const T, const L1, const R1, O1, M >,
+            const VectorExpression< const T, const L2, const R2, O2, M >, V_ADD, M >
                 ( x, y );
     }
     // expression( x ) + y
     template< typename L, typename R, Oper O, VecType M, typename T >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const Vector< T, M >, V_ADD, M >
-    operator+( const VectorExpression< const L, const R, O, M >& x, 
+    operator+( const VectorExpression< const T, const L, const R, O, M >& x, 
             const Vector< T, M >& y ) {
         assert( x.size1() == y.size1() && 
             bool( "Vectors have different lengths" ) );
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >, 
                 const Vector< T, M >, V_ADD, M>( x, y );
     }
     // x + expression( y ) = expression( y ) + x
     template< typename L, typename R, Oper O, VecType M, typename T >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const Vector< T, M >, V_ADD, M >
     operator+( const Vector< T, M >& y,
-            const VectorExpression< const L, const R, O, M >& x ) {
+            const VectorExpression< const T, const L, const R, O, M >& x ) {
         assert( x.size1() == y.size1() && 
             bool( "Vectors have different lengths" ) );
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >, 
                 const Vector< T, M >, V_ADD, M>( x, y );
     }
     // x + y
     template< typename T, VecType M >
-    VectorExpression< const Vector< T, M >, const Vector< T, M >, V_ADD, M >
+    VectorExpression< const T, const Vector< T, M >, const Vector< T, M >, V_ADD, M >
     operator+( const Vector< T, M >& x, const Vector< T, M >& y ) {
-        return VectorExpression< const Vector< T, M >, 
+        return VectorExpression< const T, const Vector< T, M >, 
                 const Vector< T, M >, V_ADD, M >( x, y );
     }
     // expression( x ) - expression( y )
-    template< typename L1, typename R1, Oper O1, VecType M,
+    template< typename T, typename L1, typename R1, Oper O1, VecType M,
             typename L2, typename R2, Oper O2 >
-    VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
-            const VectorExpression< const L2, const R2, O2, M >, V_SUB, M >
-    operator-( const VectorExpression< const L1, const R1, O1, M >& x, 
-            const VectorExpression< const L2, const R2, O2, M >& y ) {
+    VectorExpression< const T, const VectorExpression< const T, const L1, const R1, O1, M >,
+            const VectorExpression< const T, const L2, const R2, O2, M >, V_SUB, M >
+    operator-( const VectorExpression< const T, const L1, const R1, O1, M >& x, 
+            const VectorExpression< const T, const L2, const R2, O2, M >& y ) {
         assert( x.size1() == y.size1() &&
             bool( "Vectors have different lengths" ) );
-        return VectorExpression< const VectorExpression< const L1, const R1, O1, M >,
-            const VectorExpression< const L2, const R2, O2, M >, V_SUB, M >
+        return VectorExpression< const T, const VectorExpression< const T, const L1, const R1, O1, M >,
+            const VectorExpression< const T, const L2, const R2, O2, M >, V_SUB, M >
                 ( x, y );
     }
     // expression( x ) - y
     template< typename L, typename R, Oper O, VecType M, typename T >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const Vector< T, M >, V_SUB, M >
-    operator-( const VectorExpression< const L, const R, O, M >& x, 
+    operator-( const VectorExpression< const T, const L, const R, O, M >& x, 
             const Vector< T, M >& y ) {
         assert( x.size1() == y.size1() && 
             bool( "Vectors have different lengths" ) );
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >, 
                 const Vector< T, M >, V_SUB, M>( x, y );
     }
     // x - expression( y )
     template< typename L, typename R, Oper O, VecType M, typename T >
-    VectorExpression< const Vector< T, M >,
-            const VectorExpression< const L, const R, O, M >,
+    VectorExpression< const T, const Vector< T, M >,
+            const VectorExpression< const T, const L, const R, O, M >,
             V_SUB, M >
     operator-( const Vector< T, M >& x, 
-            const VectorExpression< const L, const R, O, M >& y ) {
-        return VectorExpression< const Vector< T, M >,
-                const VectorExpression< const L, const R, O, M >,
+            const VectorExpression< const T, const L, const R, O, M >& y ) {
+        return VectorExpression< const T, const Vector< T, M >,
+                const VectorExpression< const T, const L, const R, O, M >,
                 V_SUB, M >( x, y );
     }
     // x - y
     template< typename T, VecType M >
-    VectorExpression< const Vector< T, M >, const Vector< T, M >, V_SUB, M >
+    VectorExpression< const T, const Vector< T, M >, const Vector< T, M >, V_SUB, M >
     operator-( const Vector< T, M >& x, const Vector< T, M >& y ) {
-        return VectorExpression< const Vector< T, M >, const Vector< T, M >,
+        return VectorExpression< const T, const Vector< T, M >, const Vector< T, M >,
                 V_SUB, M >( x, y ); 
     }
     // scale: x * a
     template< typename T, VecType M, typename S >
-    VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+    VectorExpression< const T, const Vector< T, M >, const S, V_SCALE, M >
     operator*( const Vector< T, M >& x, const S& a ) {
-        return VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+        return VectorExpression< const T, const Vector< T, M >, const S, V_SCALE, M >
                 ( x, a );
     }
     // expression( x ) * a;
-    template< typename L, typename R, Oper O, VecType M >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const int, V_SCALE, M >
-    operator*( const VectorExpression< const L, const R, O, M >& proxy, 
+    operator*( const VectorExpression< const T, const L, const R, O, M >& proxy, 
             const int& a ) {
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >,
             const int, V_SCALE, M >( proxy,  a );
     }
-    template< typename L, typename R, Oper O, VecType M >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const float, V_SCALE, M >
-    operator*( const VectorExpression< const L, const R, O, M >& proxy, 
+    operator*( const VectorExpression< const T,const L, const R, O, M >& proxy, 
             const float& a ) {
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >,
             const float, V_SCALE, M >( proxy,  a );
     }
-    template< typename L, typename R, Oper O, VecType M >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const double, V_SCALE, M >
-    operator*( const VectorExpression< const L, const R, O, M >& proxy, 
+    operator*( const VectorExpression< const T, const L, const R, O, M >& proxy, 
             const double& a ) {
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >,
             const double, V_SCALE, M >( proxy,  a );
     }
     // a * x = x * a
     template< typename T, VecType M, typename S >
-    VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+    VectorExpression< const T, const Vector< T, M >, const S, V_SCALE, M >
     operator*( const S& a, const Vector< T, M >& x ) {
-        return VectorExpression< const Vector< T, M >, const S, V_SCALE, M >
+        return VectorExpression< const T, const Vector< T, M >, const S, V_SCALE, M >
                 ( x, a );
     }
     // a * expression( x );
-    template< typename L, typename R, Oper O, VecType M >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const int, V_SCALE, M >
     operator*( const int& a, 
-            const VectorExpression< const L, const R, O, M >& proxy
+            const VectorExpression< const T, const L, const R, O, M >& proxy
              ) {
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >,
             const int, V_SCALE, M >( proxy,  a );
     }
-    template< typename L, typename R, Oper O, VecType M >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const float, V_SCALE, M >
     operator*( const float& a, 
-            const VectorExpression< const L, const R, O, M >& proxy
+            const VectorExpression< const T, const L, const R, O, M >& proxy
              ) {
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >,
             const float, V_SCALE, M >( proxy,  a );
     }
-    template< typename L, typename R, Oper O, VecType M >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    template< typename T, typename L, typename R, Oper O, VecType M >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const double, V_SCALE, M >
     operator*( const double& a, 
-            const VectorExpression< const L, const R, O, M >& proxy
+            const VectorExpression< const T, const L, const R, O, M >& proxy
              ) {
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >,
             const double, V_SCALE, M >( proxy,  a );
     }
     // -x
     template< typename T, VecType M >
-    VectorExpression< const Vector< T, M >, const Vector< T, M >, V_NEGATIVE,
+    VectorExpression< const T, const Vector< T, M >, const Vector< T, M >, V_NEGATIVE,
             M >
     Vector< T, M >::operator-() const {
-        return VectorExpression< const SelfType, const SelfType,
+        return VectorExpression< const T, const SelfType, const SelfType,
                 V_NEGATIVE, M >( *this, *this );
     }
     // x / a = x * ( 1 / a )
     template< typename T, typename S, VecType M >
-    VectorExpression< const Vector< T, M >, const S, V_DIV, M >
+    VectorExpression< const T, const Vector< T, M >, const S, V_DIV, M >
     operator/( const Vector< T, M >& x, const S& a ) {
         assert( a != 0 
                 && bool( "Divided by zero!" ) );
-        return VectorExpression< const Vector< T, M >, const S, V_DIV, M >
+        return VectorExpression< const T, const Vector< T, M >, const S, V_DIV, M >
                 ( x, a );
     }
     // expression( x ) / a
-    template< typename L, typename R, Oper O, typename S, VecType M >
-    VectorExpression< const VectorExpression< const L, const R, O, M >,
+    template< typename T, typename L, typename R, Oper O, typename S, VecType M >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, M >,
             const S, V_DIV, M >
-    operator/( const VectorExpression< const L, const R, O, M >& x,
+    operator/( const VectorExpression< const T, const L, const R, O, M >& x,
             const S& a ) {
         assert( a != 0 
                 && bool( "Divided by zero!" ) );
-        return VectorExpression< const VectorExpression< const L, 
+        return VectorExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, M >, const S, V_DIV, M >( x, a );
     }
     // t( x ) (col vector)
     template< typename T >
-    VectorExpression< const Vector< T, COL >, const Vector< T, COL >, V_TRANS,
+    VectorExpression< const T, const Vector< T, COL >, const Vector< T, COL >, V_TRANS,
             ROW >
     t( const Vector< T, COL >& x ) {
-        return VectorExpression< const Vector< T, COL >, 
+        return VectorExpression< const T, const Vector< T, COL >, 
                 const Vector< T, COL >, V_TRANS,
             ROW >( x, x );
     }
     // t( x ) (row vector)
     template< typename T >
-    VectorExpression< const Vector< T, ROW >, const Vector< T, ROW >, V_TRANS,
+    VectorExpression< const T, const Vector< T, ROW >, const Vector< T, ROW >, V_TRANS,
             COL >
     t( const Vector< T, ROW >& x ) {
-        return VectorExpression< const Vector< T, ROW >, 
+        return VectorExpression< const T, const Vector< T, ROW >, 
                 const Vector< T, ROW >, V_TRANS,
             COL >( x, x );
     }
     // t( expression( x ) ) (col vector)
-    template< typename L, typename R, Oper O >
-    VectorExpression< const VectorExpression< const L, const R, O, COL >, 
-            const VectorExpression< const L, const R, O, COL >, V_TRANS,
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, COL >, 
+            const VectorExpression< const T, const L, const R, O, COL >, V_TRANS,
             ROW >
-    t( const VectorExpression< const L, const R, O, COL >& x ) {
-        return VectorExpression< const VectorExpression< const L, const R,
+    t( const VectorExpression< const T, const L, const R, O, COL >& x ) {
+        return VectorExpression< const T, const VectorExpression< const T, const L, const R,
                 O, COL >, 
-            const VectorExpression< const L, const R, O, COL >, V_TRANS,
+            const VectorExpression< const T, const L, const R, O, COL >, V_TRANS,
             ROW >( x, x );
     }
     // t( expression( x ) ) (row vector)
-    template< typename L, typename R, Oper O >
-    VectorExpression< const VectorExpression< const L, const R, O, ROW >, 
-            const VectorExpression< const L, const R, O, ROW >, V_TRANS,
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, const VectorExpression< const T, const L, const R, O, ROW >, 
+            const VectorExpression< const T, const L, const R, O, ROW >, V_TRANS,
             COL >
-    t( const VectorExpression< const L, const R, O, ROW >& x ) {
-        return VectorExpression< const VectorExpression< const L, const R,
+    t( const VectorExpression< const T, const L, const R, O, ROW >& x ) {
+        return VectorExpression< const T, const VectorExpression< const T, const L, const R,
                 O, ROW >, 
-            const VectorExpression< const L, const R, O, ROW >, V_TRANS,
+            const VectorExpression< const T, const L, const R, O, ROW >, V_TRANS,
             COL >( x, x );
     }
     // x * t( y ) 
     template< typename T >
     MatrixExpression< const Vector< T, COL >, const Vector< T, COL >, V_OUTER >
-    operator*( const Vector< T, COL >& x, const VectorExpression<
+    operator*( const Vector< T, COL >& x, const VectorExpression< const T,
         const Vector< T, COL >, const Vector< T, COL >, V_TRANS, ROW>& y ) {
         return MatrixExpression< const Vector< T, COL >, 
                 const Vector< T, COL >, V_OUTER >( x, y.lhs() );
     }
     // expression( x ) * t( y )
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const VectorExpression< const L, const R, O, COL >,
+    MatrixExpression< const VectorExpression< const T, const L, const R, O, COL >,
             const Vector< T, COL >, V_OUTER >
-    operator*( const VectorExpression< const L, const R, O, COL >& x,
-            const VectorExpression< const Vector< T, COL >, 
+    operator*( const VectorExpression< const T, const L, const R, O, COL >& x,
+            const VectorExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_TRANS, ROW >& y ) {
-        return MatrixExpression< const VectorExpression< const L, 
+        return MatrixExpression< const VectorExpression< const T, const L, 
                 const R, O, COL >, const Vector< T, COL >, V_OUTER >( x, y.lhs() );
     }
     // x * t( expression( y ) )
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const Vector< T, COL >, const VectorExpression< const L,
+    MatrixExpression< const Vector< T, COL >, const VectorExpression< const T, const L,
             const R, O, COL >, V_OUTER >
-    operator*( const Vector< T, COL >& x, const VectorExpression<
-        const VectorExpression< const L, const R, O, COL >, 
-            const VectorExpression< const L, const R, O, COL >, V_TRANS, ROW>& y ) {
+    operator*( const Vector< T, COL >& x, const VectorExpression< const T,
+        const VectorExpression< const T, const L, const R, O, COL >, 
+            const VectorExpression< const T, const L, const R, O, COL >, V_TRANS, ROW>& y ) {
         return MatrixExpression< const Vector< T, COL >, 
-                const VectorExpression< const L, const R, O, COL >, V_OUTER >( x, y.lhs() );
+                const VectorExpression< const T, const L, const R, O, COL >, V_OUTER >( x, y.lhs() );
     }
     // expression( x ) * t( expression( y ) )
     template< typename T, typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
-    MatrixExpression< const VectorExpression< const L1, const R1, O1, COL >, 
-            const VectorExpression< const L2,
+    MatrixExpression< const VectorExpression< const T, const L1, const R1, O1, COL >, 
+            const VectorExpression< const T, const L2,
             const R2, O2, COL >, V_OUTER >
-    operator*( const VectorExpression< const L1, const R1, O1, COL >& x,
-            const VectorExpression<
-        const VectorExpression< const L2, const R2, O2, COL >, 
-            const VectorExpression< const L2, const R2, O2, COL >, V_TRANS, ROW>& y ) {
-        return MatrixExpression< const VectorExpression< const L1, const R1, O1, COL >, 
-                const VectorExpression< const L2, const R2, O2, COL >, 
+    operator*( const VectorExpression< const T, const L1, const R1, O1, COL >& x,
+            const VectorExpression< const T,
+        const VectorExpression< const T, const L2, const R2, O2, COL >, 
+            const VectorExpression< const T, const L2, const R2, O2, COL >, V_TRANS, ROW>& y ) {
+        return MatrixExpression< const VectorExpression< const T, const L1, const R1, O1, COL >, 
+                const VectorExpression< const T, const L2, const R2, O2, COL >, 
                 V_OUTER >( x, y.lhs() );
     }
     // x * y (COL * ROW)
@@ -900,61 +900,61 @@ namespace xmagma{
     }
     // expression( x ) * y (COL * ROW)
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const VectorExpression< const L, const R, O, COL >, 
+    MatrixExpression< const VectorExpression< const T, const L, const R, O, COL >, 
             const Vector< T, COL >, V_OUTER >
-    operator*( const VectorExpression< const L, const R, O, COL >& x, 
+    operator*( const VectorExpression< const T, const L, const R, O, COL >& x, 
             const Vector< T, ROW >& y ) {
-        return MatrixExpression< const VectorExpression< const L, 
+        return MatrixExpression< const VectorExpression< const T, const L, 
                 const R, O, COL >, 
                 const Vector< T, COL >, V_OUTER >( x, y );
     }
     // x * expression( y ) (COL * ROW)
     template< typename T, typename L, typename R, Oper O >
     MatrixExpression< const Vector< T, COL >, 
-            const VectorExpression< const L, const R, O, COL >, 
+            const VectorExpression< const T, const L, const R, O, COL >, 
             V_OUTER >
     operator*( const Vector< T, COL >& x, 
-            const VectorExpression< const L, const R, O, ROW >& y ) {
+            const VectorExpression< const T, const L, const R, O, ROW >& y ) {
         return MatrixExpression< const Vector< T, COL >, 
-            const VectorExpression< const L, const R, O, COL >, 
+            const VectorExpression< const T, const L, const R, O, COL >, 
             V_OUTER >( x, y );
     }
     // expression( x ) * expression( y ) (COL * ROW)
     template< typename T, typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
-    MatrixExpression< const VectorExpression< const L1, const R1, O1, COL >, 
-            const VectorExpression< const L2, const R2, O2, COL >, 
+    MatrixExpression< const VectorExpression< const T, const L1, const R1, O1, COL >, 
+            const VectorExpression< const T, const L2, const R2, O2, COL >, 
             V_OUTER >
-    operator*( const VectorExpression< const L1, const R1, O1, COL >& x, 
-            const VectorExpression< const L2, const R2, O2, ROW >& y ) {
-        return MatrixExpression< const VectorExpression< const L1, 
+    operator*( const VectorExpression< const T, const L1, const R1, O1, COL >& x, 
+            const VectorExpression< const T, const L2, const R2, O2, ROW >& y ) {
+        return MatrixExpression< const VectorExpression< const T, const L1, 
                 const R1, O1, COL >, 
-            const VectorExpression< const L2, const R2, O2, COL >, 
+            const VectorExpression< const T, const L2, const R2, O2, COL >, 
             V_OUTER >( x, y );
     }
     /* OpExecutor for vector */
     // y = t( expression( x ) )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Vector< T, COL >, V_ASSIGN, VectorExpression<
-        const VectorExpression< const L, const R, O, ROW >,
-        const VectorExpression< const L, const R, O, ROW >, V_TRANS, COL> > {
+    class OpExecutor< Vector< T, COL >, V_ASSIGN, VectorExpression< const T,
+        const VectorExpression< const T, const L, const R, O, ROW >,
+        const VectorExpression< const T, const L, const R, O, ROW >, V_TRANS, COL> > {
     public:
-        static void apply( Vector< T, COL >& y, const VectorExpression<
-        const VectorExpression< const L, const R, O, ROW >,
-        const VectorExpression< const L, const R, O, ROW >, V_TRANS,
+        static void apply( Vector< T, COL >& y, const VectorExpression< const T,
+        const VectorExpression< const T, const L, const R, O, ROW >,
+        const VectorExpression< const T, const L, const R, O, ROW >, V_TRANS,
                 COL >& x ) {
             Vector< T, COL > temp( x.rhs() );
             y = t( temp );
         }
     };
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Vector< T, ROW >, V_ASSIGN, VectorExpression<
-        const VectorExpression< const L, const R, O, COL >,
-        const VectorExpression< const L, const R, O, COL >, V_TRANS, ROW > > {
+    class OpExecutor< Vector< T, ROW >, V_ASSIGN, VectorExpression< const T,
+        const VectorExpression< const T, const L, const R, O, COL >,
+        const VectorExpression< const T, const L, const R, O, COL >, V_TRANS, ROW > > {
     public:
-        static void apply( Vector< T, ROW >& y, const VectorExpression<
-        const VectorExpression< const L, const R, O, COL >,
-        const VectorExpression< const L, const R, O, COL >, V_TRANS,
+        static void apply( Vector< T, ROW >& y, const VectorExpression< const T,
+        const VectorExpression< const T, const L, const R, O, COL >,
+        const VectorExpression< const T, const L, const R, O, COL >, V_TRANS,
                 ROW >& x ) {
             Vector< T, ROW > temp( x.rhs() );
             y = t( temp );
@@ -970,10 +970,10 @@ namespace xmagma{
     };
     // z = x ( expr ) + y ( expr )
     template< typename T, typename L, typename R, VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const L, 
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T, const L, 
             const R, V_ADD, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, const L, 
             const R, V_ADD, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Vector< T, M > temp( proxy.lhs() );
@@ -990,10 +990,10 @@ namespace xmagma{
     // y += trans( x )
     template< typename T >
     class OpExecutor< Vector< T, COL >, V_INPLACE_ADD, 
-            VectorExpression< const Vector< T, ROW >, 
+            VectorExpression< const T, const Vector< T, ROW >, 
                                          const Vector< T, ROW >, V_TRANS, COL > > {
     public:
-        static void apply( Vector< T, COL >& lhs, const VectorExpression<
+        static void apply( Vector< T, COL >& lhs, const VectorExpression< const T,
         const Vector< T, ROW >,
                 const Vector< T, ROW >, V_TRANS, COL >& rhs ) {
             Vector< T, COL >temp( t( rhs.rhs() ) );
@@ -1002,10 +1002,10 @@ namespace xmagma{
     };
     template< typename T >
     class OpExecutor< Vector< T, ROW >, V_INPLACE_ADD, 
-            VectorExpression< const Vector< T, COL >, 
+            VectorExpression< const T, const Vector< T, COL >, 
                                          const Vector< T, COL >, V_TRANS, ROW > > {
     public:
-        static void apply( Vector< T, ROW >& lhs, const VectorExpression<
+        static void apply( Vector< T, ROW >& lhs, const VectorExpression< const T,
         const Vector< T, COL >,
                 const Vector< T, COL >, V_TRANS, ROW >& rhs ) {
             Vector< T, ROW >temp( t( rhs.rhs() ) );
@@ -1014,12 +1014,12 @@ namespace xmagma{
     };
     // y += trans( expression( x ) )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Vector< T, COL >, V_INPLACE_ADD, VectorExpression<
-    const VectorExpression< const L, const R, O, ROW >, const VectorExpression<
+    class OpExecutor< Vector< T, COL >, V_INPLACE_ADD, VectorExpression< const T,
+    const VectorExpression< const T, const L, const R, O, ROW >, const VectorExpression< const T,
     const L, const R, O, ROW >, V_TRANS, COL > > {
     public:
-        static void apply( Vector< T, COL >& lhs, const VectorExpression<
-    const VectorExpression< const L, const R, O, ROW >, const VectorExpression<
+        static void apply( Vector< T, COL >& lhs, const VectorExpression< const T,
+    const VectorExpression< const T, const L, const R, O, ROW >, const VectorExpression< const T,
     const L, const R, O, ROW >, V_TRANS, COL >& rhs ) {
             Vector< T, ROW > temp1( rhs.rhs());
             Vector< T, COL > temp2( temp1.size1() );
@@ -1028,12 +1028,12 @@ namespace xmagma{
         }
     };
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Vector< T, ROW >, V_INPLACE_ADD, VectorExpression<
-    const VectorExpression< const L, const R, O, COL >, const VectorExpression<
+    class OpExecutor< Vector< T, ROW >, V_INPLACE_ADD, VectorExpression< const T,
+    const VectorExpression< const T, const L, const R, O, COL >, const VectorExpression< const T,
     const L, const R, O, COL >, V_TRANS, ROW > > {
     public:
-        static void apply( Vector< T, ROW >& lhs, const VectorExpression<
-    const VectorExpression< const L, const R, O, COL >, const VectorExpression<
+        static void apply( Vector< T, ROW >& lhs, const VectorExpression< const T,
+    const VectorExpression< const T, const L, const R, O, COL >, const VectorExpression< const T,
     const L, const R, O, COL >, V_TRANS, ROW >& rhs ) {
             Vector< T, COL > temp1( rhs.rhs());
             Vector< T, ROW > temp2( temp1.size1() );
@@ -1051,20 +1051,20 @@ namespace xmagma{
     };
     // y -= trans( x )
     template< typename T >
-    class OpExecutor< Vector< T, COL >, V_INPLACE_SUB, VectorExpression< 
+    class OpExecutor< Vector< T, COL >, V_INPLACE_SUB, VectorExpression< const T, 
     const Vector< T, ROW >, const Vector< T, ROW >, V_TRANS, COL > > {
     public:
-        static void apply( Vector< T, COL >& lhs, const VectorExpression< 
+        static void apply( Vector< T, COL >& lhs, const VectorExpression< const T, 
     const Vector< T, ROW >, const Vector< T, ROW >, V_TRANS, COL >& rhs ) {
             Vector< T, COL > temp( rhs );
             lhs -= temp;
         }
     };
     template< typename T >
-    class OpExecutor< Vector< T, ROW >, V_INPLACE_SUB, VectorExpression< 
+    class OpExecutor< Vector< T, ROW >, V_INPLACE_SUB, VectorExpression< const T, 
     const Vector< T, COL>, const Vector< T, COL >, V_TRANS, ROW > > {
     public:
-        static void apply( Vector< T, ROW >& lhs, const VectorExpression< 
+        static void apply( Vector< T, ROW >& lhs, const VectorExpression< const T, 
     const Vector< T, COL >, const Vector< T, COL >, V_TRANS, ROW >& rhs ) {
             Vector< T, ROW > temp( rhs );
             lhs -= temp;
@@ -1073,12 +1073,12 @@ namespace xmagma{
     // y -= trans( expression( x ) )
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Vector< T, COL >, V_INPLACE_SUB,
-            VectorExpression< const VectorExpression< const L, const R, O, ROW >,
-            const VectorExpression< const L, const R, O, ROW >, V_TRANS, COL > > {
+            VectorExpression< const T, const VectorExpression< const T, const L, const R, O, ROW >,
+            const VectorExpression< const T, const L, const R, O, ROW >, V_TRANS, COL > > {
     public:
-        static void apply( Vector< T, COL >& lhs, const VectorExpression<
-        const VectorExpression< const L, const R, O, ROW >,
-            const VectorExpression< const L, const R, O, ROW >,
+        static void apply( Vector< T, COL >& lhs, const VectorExpression< const T,
+        const VectorExpression< const T, const L, const R, O, ROW >,
+            const VectorExpression< const T, const L, const R, O, ROW >,
                 V_TRANS, COL >& rhs ) {
             Vector< T, ROW > temp1( rhs.rhs());
             Vector< T, COL > temp2( temp1.size1() );
@@ -1088,12 +1088,12 @@ namespace xmagma{
     };
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Vector< T, ROW >, V_INPLACE_SUB,
-            VectorExpression< const VectorExpression< const L, const R, O, COL >,
-            const VectorExpression< const L, const R, O, COL >, V_TRANS, ROW > > {
+            VectorExpression< const T, const VectorExpression< const T, const L, const R, O, COL >,
+            const VectorExpression< const T, const L, const R, O, COL >, V_TRANS, ROW > > {
     public:
-        static void apply( Vector< T, ROW >& lhs, const VectorExpression<
-        const VectorExpression< const L, const R, O, COL >,
-            const VectorExpression< const L, const R, O, COL >,
+        static void apply( Vector< T, ROW >& lhs, const VectorExpression< const T,
+        const VectorExpression< const T, const L, const R, O, COL >,
+            const VectorExpression< const T, const L, const R, O, COL >,
                 V_TRANS, ROW >& rhs ) {
             Vector< T, COL > temp1( rhs.rhs());
             Vector< T, ROW > temp2( temp1.size1() );
@@ -1104,50 +1104,50 @@ namespace xmagma{
     /*                        y Oper x * a                         */
     // y += x * alpha
     template< typename T, typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, 
     const Vector< T, M >, const S, V_SCALE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
     const Vector< T, M >, const S, V_SCALE, M >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  T( proxy.rhs() ) );
         }
     };
     // y += - x  
     template< typename T, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, 
     const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M> > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
     const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M>& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  T( - 1 )  );
         }
     };
     // y -= x * alpha
     template< typename T, typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, 
     const Vector< T, M >, const S, V_SCALE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
     const Vector< T, M >, const S, V_SCALE, M >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  - T( proxy.rhs() ) );
         }
     };
     // y -= - x 
     template< typename T, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, 
     const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
     const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  T( 1 ) );
         }
     };
     // y = x * a
     template< typename T, typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression<
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T,
     const Vector< T, M >, const S, V_SCALE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression<
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T,
     const Vector< T, M >, const S, V_SCALE, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 scale( lhs, T( proxy.rhs() ) );
@@ -1160,11 +1160,11 @@ namespace xmagma{
     // y = expression( x ) * a
     template< typename T, typename L, typename R, Oper O, typename S, 
             VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M > > {
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_SCALE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M >
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_SCALE, M >
         & proxy ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs = temp * proxy.rhs();
@@ -1173,10 +1173,10 @@ namespace xmagma{
     /*                        y Oper x / a                         */
     // y += x / alpha
     template< typename T, typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, 
     const Vector< T, M >, const S, V_DIV, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
     const Vector< T, M >, const S, V_DIV, M >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  1 / T( proxy.rhs() ) );
         }
@@ -1184,11 +1184,11 @@ namespace xmagma{
     // y += expression( x ) / alpha
     template< typename T, typename S, typename L, typename R, Oper O, 
             VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M > > {
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_DIV, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M >&
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_DIV, M >&
         proxy ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs += temp / T( proxy.rhs() );
@@ -1196,10 +1196,10 @@ namespace xmagma{
     };
     // y -= x / alpha
     template< typename T, typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, 
     const Vector< T, M >, const S, V_DIV, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
     const Vector< T, M >, const S, V_DIV, M >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  - 1 / T ( proxy.rhs() ) );
         }
@@ -1207,11 +1207,11 @@ namespace xmagma{
     // y -= expression( x ) / alpha
     template< typename T, typename S, typename L, typename R, Oper O,
             VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M > > {
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_DIV, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M >&
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_DIV, M >&
         proxy ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs -= temp / T( proxy.rhs() );
@@ -1219,10 +1219,10 @@ namespace xmagma{
     };
     // y = x / a
     template< typename T, typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression<
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T,
     const Vector< T, M >, const S, V_DIV, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression<
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T,
     const Vector< T, M >, const S, V_DIV, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 scale( lhs, 1 / T( proxy.rhs() ) );
@@ -1235,11 +1235,11 @@ namespace xmagma{
     // y = expression( x ) / a
     template< typename T, typename L, typename R, Oper O,
             typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M > > {
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_DIV, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_DIV, M >& 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_DIV, M >& 
         proxy ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs = temp * ( 1 / T ( proxy.rhs() ) );
@@ -1247,10 +1247,10 @@ namespace xmagma{
     };
     // y = - x
     template< typename T, VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression<
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T,
     const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression<
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T,
     const Vector< T, M >, const Vector< T, M >, V_NEGATIVE, M >&
         proxy ) {
             lhs = - 1 * proxy.lhs();
@@ -1258,13 +1258,13 @@ namespace xmagma{
     };
     // y = - expression( x )
     template< typename T, typename L, typename R, Oper O, VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, 
-            const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M > > {
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, 
+            const VectorExpression< const T, const L, const R, O, M >, V_NEGATIVE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, 
-            const VectorExpression< const L, const R, O, M >, 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, 
+            const VectorExpression< const T, const L, const R, O, M >, 
                 V_NEGATIVE, M >& proxy ) {
              Vector< T, M > temp( proxy.lhs() );
             lhs = - 1 * temp;
@@ -1273,11 +1273,11 @@ namespace xmagma{
     // y += expression( x ) * a
     template< typename T, typename L, typename R, Oper O, 
             typename S, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M > > {
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_SCALE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M >&
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_SCALE, M >&
         proxy  ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs += temp * proxy.rhs();
@@ -1286,11 +1286,11 @@ namespace xmagma{
     // y -= expression( x ) * a
     template< typename T, typename L, typename R, Oper O, typename S,
             VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M > > {
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_SCALE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, const S, V_SCALE, M >&
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, const S, V_SCALE, M >&
         proxy  ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs -= temp * proxy.rhs();
@@ -1298,26 +1298,26 @@ namespace xmagma{
     };
     // y += - expression( x )
     template< typename T, typename L, typename R, Oper O, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, 
-    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M > > {
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, 
+    const VectorExpression< const T, const L, const R, O, M >, V_NEGATIVE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, 
-    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M >& proxy  ) {
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, 
+    const VectorExpression< const T, const L, const R, O, M >, V_NEGATIVE, M >& proxy  ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs += temp * (  - 1 );
         }
     };
     // y -= - expression( x )
     template< typename T, typename L, typename R, Oper O, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, 
-    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M > > {
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, 
+    const VectorExpression< const T, const L, const R, O, M >, V_NEGATIVE, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< 
-    const VectorExpression< const L, const R, O, M >, 
-    const VectorExpression< const L, const R, O, M >, V_NEGATIVE, M >&
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, 
+    const VectorExpression< const T, const L, const R, O, M >, 
+    const VectorExpression< const T, const L, const R, O, M >, V_NEGATIVE, M >&
         proxy  ) {
             Vector< T, M > temp( proxy.lhs() );
             lhs -= temp * (  - 1 );
@@ -1325,10 +1325,10 @@ namespace xmagma{
     };
     // z += expression( x ) + expression( y )
     template< typename T, typename L, typename R, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const L, 
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, const L, 
             const R, V_ADD, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, const L, 
             const R, V_ADD, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Vector< T, M > temp( proxy.lhs() );
@@ -1344,10 +1344,10 @@ namespace xmagma{
     };
     // z -= expression( x ) + expression( y )
     template< typename T, typename L, typename R, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const L, 
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, const L, 
             const R, V_ADD, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, const L, 
             const R, V_ADD, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Vector< T, M > temp( proxy.lhs() );
@@ -1363,10 +1363,10 @@ namespace xmagma{
     };
     // z = expression( x ) - expression( y )
     template< typename T, typename L, typename R, VecType M >
-    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const L, 
+    class OpExecutor< Vector< T, M >, V_ASSIGN, VectorExpression< const T, const L, 
             const R, V_SUB, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, const L, 
             const R, V_SUB, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Vector< T, M > temp( proxy.lhs() );
@@ -1382,10 +1382,10 @@ namespace xmagma{
     };
     // z += expression( x ) - expression( y )
     template< typename T, typename L, typename R, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const L, 
+    class OpExecutor< Vector< T, M >, V_INPLACE_ADD, VectorExpression< const T, const L, 
             const R, V_SUB, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, const L, 
             const R, V_SUB, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Vector< T, M > temp( proxy.lhs() );
@@ -1401,10 +1401,10 @@ namespace xmagma{
     };
     // z -= expression( x ) - expression( y )
     template< typename T, typename L, typename R, VecType M >
-    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const L, 
+    class OpExecutor< Vector< T, M >, V_INPLACE_SUB, VectorExpression< const T, const L, 
             const R, V_SUB, M > > {
     public:
-        static void apply( Vector< T, M >& lhs, const VectorExpression< const L, 
+        static void apply( Vector< T, M >& lhs, const VectorExpression< const T, const L, 
             const R, V_SUB, M >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Vector< T, M > temp( proxy.lhs() );

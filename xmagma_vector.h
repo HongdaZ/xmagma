@@ -43,7 +43,7 @@ namespace xmagma {
          * O                   type of operator
          */
         template< typename L, typename R, Oper O >
-        explicit Vector( VectorExpression< const L, const R, O, M > const& 
+        explicit Vector( VectorExpression< const T, const L, const R, O, M > const& 
             proxy );
         
         /* Deep copy of the Vector */
@@ -59,44 +59,44 @@ namespace xmagma {
         // v1 = v2
         SelfType& operator=( const SelfType& other );
         template< typename L, typename R, Oper O>
-        SelfType& operator=( const VectorExpression< const L, const R,
+        SelfType& operator=( const VectorExpression< const T, const L, const R,
                 O, M >& proxy );
         // v1 = trans( v2 )
         template< VecType M2 >
-        SelfType& operator=( const VectorExpression< const Vector< T, M2 >,
+        SelfType& operator=( const VectorExpression< const T, const Vector< T, M2 >,
                 const Vector< T, M2 >, V_TRANS, M >& proxy );
         /* Matrix-vector operations */
         // v1 = A * v2
-        SelfType& operator=( const VectorExpression< const Matrix< T >,
+        SelfType& operator=( const VectorExpression< const T, const Matrix< T >,
                 const Vector< T, M >, MV_MULT, M >& proxy );
         // v1 = v2 * A
-        SelfType& operator=( const VectorExpression< const Vector< T, M >,
+        SelfType& operator=( const VectorExpression< const T, const Vector< T, M >,
                 const Matrix< T >, VM_MULT, M >& proxy );
         // v1 = t( A ) * v2
-        SelfType& operator=( const VectorExpression< const MatrixExpression<
+        SelfType& operator=( const VectorExpression< const T, const MatrixExpression<
         const Matrix< T >, const Matrix< T >, M_TRANS >,
                 const Vector< T, M >, MV_MULT, M >& proxy );
         // v1 = v2 * t( A )
-        SelfType& operator=( const VectorExpression< const Vector< T, M >,
+        SelfType& operator=( const VectorExpression< const T, const Vector< T, M >,
                 const MatrixExpression< const Matrix< T >,
                 const Matrix< T >, M_TRANS >,
                  VM_MULT, M >& proxy );
         
         // v1 += v2
         template< typename L, typename R, Oper O>
-        SelfType& operator+=( const VectorExpression< const L,
+        SelfType& operator+=( const VectorExpression< const T, const L,
                 const R, O, M > & proxy );
         SelfType& operator+=( const SelfType& other );
         // v1 -= v2
         template< typename L, typename R, Oper O >
-        SelfType& operator-=( const VectorExpression< const L,
+        SelfType& operator-=( const VectorExpression< const T, const L,
                 const R, O, M >& proxy );
         SelfType& operator-=( const SelfType& other );
         // v1 *= a inplace scale a Vector
         SelfType& operator*=( const T );
         SelfType& operator/=( const T );
         // -v1
-        VectorExpression< const SelfType, const SelfType, V_NEGATIVE, M > 
+        VectorExpression< const T, const SelfType, const SelfType, V_NEGATIVE, M > 
         operator-() const;
         
         /* Return dimensions of the vector */
