@@ -364,8 +364,18 @@ namespace xmagma{
         v_inner( x, temp, p );
         return p;
     }
+    // expression( x ) inner t( y )
+    template< typename T, typename L, typename R, Oper O >
+    T operator*( const VectorExpression< const L , const R, O, ROW >& x,
+            const VectorExpression< const Vector< T, ROW >,
+            const Vector< T, ROW >, V_TRANS, COL >& y ) {
+        T p;
+        Vector< T, ROW > temp1( x );
+        v_inner( temp1, y.lhs(), p );
+        return p;
+    }
     // expression( x ) inner expression( y )
-    template< typename T, typename L1, typename R1, Oper O1,
+    template< typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
     T operator*( const VectorExpression< const L1 , const R1, O1, ROW >& x,
             const VectorExpression< const L2 , const R2, O2, COL >& y ) {
@@ -706,14 +716,32 @@ namespace xmagma{
                 ( x, a );
     }
     // expression( x ) * a;
-    template< typename L, typename R, Oper O, typename S, VecType M >
+    template< typename L, typename R, Oper O, VecType M >
     VectorExpression< const VectorExpression< const L, const R, O, M >,
-            const S, V_SCALE, M >
+            const int, V_SCALE, M >
     operator*( const VectorExpression< const L, const R, O, M >& proxy, 
-            const S& a ) {
+            const int& a ) {
         return VectorExpression< const VectorExpression< const L, 
                 const R, O, M >,
-            const S, V_SCALE, M >( proxy,  a );
+            const int, V_SCALE, M >( proxy,  a );
+    }
+    template< typename L, typename R, Oper O, VecType M >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const float, V_SCALE, M >
+    operator*( const VectorExpression< const L, const R, O, M >& proxy, 
+            const float& a ) {
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >,
+            const float, V_SCALE, M >( proxy,  a );
+    }
+    template< typename L, typename R, Oper O, VecType M >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const double, V_SCALE, M >
+    operator*( const VectorExpression< const L, const R, O, M >& proxy, 
+            const double& a ) {
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >,
+            const double, V_SCALE, M >( proxy,  a );
     }
     // a * x = x * a
     template< typename T, VecType M, typename S >
@@ -723,15 +751,35 @@ namespace xmagma{
                 ( x, a );
     }
     // a * expression( x );
-    template< typename L, typename R, Oper O, typename S, VecType M >
+    template< typename L, typename R, Oper O, VecType M >
     VectorExpression< const VectorExpression< const L, const R, O, M >,
-            const S, V_SCALE, M >
-    operator*( const S& a, 
+            const int, V_SCALE, M >
+    operator*( const int& a, 
             const VectorExpression< const L, const R, O, M >& proxy
              ) {
         return VectorExpression< const VectorExpression< const L, 
                 const R, O, M >,
-            const S, V_SCALE, M >( proxy,  a );
+            const int, V_SCALE, M >( proxy,  a );
+    }
+    template< typename L, typename R, Oper O, VecType M >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const float, V_SCALE, M >
+    operator*( const float& a, 
+            const VectorExpression< const L, const R, O, M >& proxy
+             ) {
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >,
+            const float, V_SCALE, M >( proxy,  a );
+    }
+    template< typename L, typename R, Oper O, VecType M >
+    VectorExpression< const VectorExpression< const L, const R, O, M >,
+            const double, V_SCALE, M >
+    operator*( const double& a, 
+            const VectorExpression< const L, const R, O, M >& proxy
+             ) {
+        return VectorExpression< const VectorExpression< const L, 
+                const R, O, M >,
+            const double, V_SCALE, M >( proxy,  a );
     }
     // -x
     template< typename T, VecType M >

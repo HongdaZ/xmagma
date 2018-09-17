@@ -462,6 +462,15 @@ xMat6 + ( xMat6 + xMat6 );
    xV6 = xV5 / 2 - ( - (  3 * xV5 + xV6 + t( xV4 ) ) );
    printf( "xV6\n");
    print( xV6 );
+   xV6 = xV5 * xMat6 + xV5;
+   printf( "xV6\n");
+   print( xV6 );
+   double a2 = xV5 * xMat6 * xV4;
+   double a3 = xV5 * xMat6 * t( xV5 );
+   printf( "a3: %f\n", a3 );
+   a3 = xV5 * xMat6 * ( t( xV5 ) + xV4 );
+   printf( "a3: %f\n", a3 );
+//   xMat6 = xV4 * xV5;
 
    
    
