@@ -221,11 +221,47 @@ namespace xmagma {
     /* Matrix-vector multiplication */
     // A * x
     template< typename T >
-    VectorExpression< const T, const Matrix< T >, const Vector< T, COL >, MV_MULT, COL >
+    VectorExpression< const T, const Matrix< T >, const Vector< T, COL >, 
+            MV_MULT, COL >
     operator*( const Matrix< T >& A, const Vector< T, COL >& x ) {
-        return VectorExpression< const T, const Matrix< T >, const Vector< T, COL >, MV_MULT,
-                COL >
-                ( A, x );
+        return VectorExpression< const T, const Matrix< T >, 
+                const Vector< T, COL >, MV_MULT,
+            COL >( A, x );
+    }
+    // A * expression( x )
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, const Matrix< T >, 
+            const VectorExpression< const T, const L, const R, O, COL >, 
+                MV_MULT, COL >
+    operator*( const Matrix< T >& A, 
+            const VectorExpression< const T, const L, const R, O, COL >& x ) {
+        return VectorExpression< const T, const Matrix< T >, 
+                const VectorExpression< const T, const L, const R, O, COL >, 
+                    MV_MULT, COL >( A, x );
+    }
+    // expression( A ) * x (COL)
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, const MatrixExpression
+    < const L, const R, O >, const Vector< T, COL >, MV_MULT, COL >
+    operator*( const MatrixExpression
+    < const L, const R, O >& A, const Vector< T, COL >& B ) {
+        return  VectorExpression< const T, const MatrixExpression
+    < const L, const R, O >, const Vector< T, COL >, MV_MULT, COL >
+                ( A, B );
+    }
+    // expression( A ) * expression( x ) (COL)
+    template< typename T, typename L1, typename R1, Oper O1,
+            typename L2, typename R2, Oper O2 >
+    VectorExpression< const T, const MatrixExpression< const L1, const R1, O1 >, 
+            const VectorExpression< const T, const L2,
+            const R2, O2, COL >, MV_MULT, COL >
+    operator*( const MatrixExpression< const L1, const R1, O1 >& A, 
+            const VectorExpression< const T, const L2, 
+            const R2, O2, COL >& B ) {
+        return  VectorExpression< const T, const MatrixExpression
+            < const L1, const R1, O1 >, const VectorExpression< const T, const L2, 
+                const R2, O2, COL >, MV_MULT, COL >
+                ( A, B );
     }
     // y = A * x
     template< typename T, VecType M >
@@ -245,11 +281,50 @@ namespace xmagma {
     }
     //  x * A (row vector)
     template< typename T >
-    VectorExpression< const T, const Vector< T, ROW >, const Matrix< T >, VM_MULT, ROW >
+    VectorExpression< const T, const Vector< T, ROW >, 
+            const Matrix< T >, VM_MULT, ROW >
     operator*( const Vector< T, ROW >& x, const Matrix< T >& A ) {
-        return VectorExpression< const T, const Vector< T, ROW >, const Matrix< T >, VM_MULT,
+        return VectorExpression< const T, const Vector< T, ROW >,
+            const Matrix< T >, VM_MULT,
+            ROW >( x, A );
+    }
+    //  expression( x ) * A (row vector)
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, 
+            const VectorExpression< const T, const L, const R, O, ROW >, 
+            const Matrix< T >, VM_MULT, ROW >
+    operator*( const VectorExpression< const T, const L, 
+            const R, O, ROW >& x,
+            const Matrix< T >& A ) {
+        return VectorExpression< const T, 
+                const VectorExpression< const T, const L, const R, O, ROW >,
+                const Matrix< T >, VM_MULT,
+                ROW >( x, A );
+    }
+    // x * expression( A )
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, const Vector< T, ROW >, const MatrixExpression
+    < const L, const R, O >, VM_MULT, ROW >
+    operator*( const Vector< T, ROW >& x, const MatrixExpression
+    < const L, const R, O >& A ) {
+        return VectorExpression< const T, const Vector< T, ROW >, const MatrixExpression
+    < const L, const R, O >, VM_MULT,
                 ROW >
                 ( x, A );
+    }
+    // expression( x ) * expression( A )
+    template< typename T, typename L1, typename R1, Oper O1,
+            typename L2, typename R2, Oper O2 >
+    VectorExpression< const T, 
+            const VectorExpression< const T, const L1, const R1, O1, COL >, 
+            const MatrixExpression< const L2, const R2, O2 >, VM_MULT, ROW >
+    operator*( const VectorExpression< const T, const L1, 
+            const R1, O1, COL >& x, 
+            const MatrixExpression< const L2, const R2, O2 >& A ) {
+        return VectorExpression< const T,
+                const VectorExpression< const T, const L1, const R1, O1, COL >, 
+                const MatrixExpression< const L2, const R2, O2 >, VM_MULT,
+                ROW >( x, A );
     }
     // y = x * A (row vector)
     template< typename T, VecType M >
@@ -281,6 +356,22 @@ namespace xmagma {
                 COL >
                 ( A, x );
     }
+    // t( A ) * expression( x )
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >, 
+            const VectorExpression< const T, const L, const R, O, COL >, 
+            MV_MULT, COL >
+    operator*( const MatrixExpression< 
+    const Matrix< T >, const Matrix< T >, M_TRANS >& A, 
+            const VectorExpression< const T, const L, const R, O, COL >& x ) {
+        return VectorExpression< const T, 
+                const MatrixExpression< const Matrix< T >, 
+                    const Matrix< T >, M_TRANS >, 
+                const VectorExpression< const T, const L, const R, O, COL >,
+                MV_MULT, COL >( A, x );
+    }
+    
     // y = t( A ) * x
     template< typename T, VecType M >
     Vector< T, M >& Vector< T, M >::operator=( const
@@ -310,6 +401,22 @@ namespace xmagma {
                 ROW >
                 ( x, A );
     }
+    // expression( x ) * t( A )             row vector x 
+    template< typename T, typename L, typename R, Oper O >
+    VectorExpression< const T, 
+            const VectorExpression< const T, const L, const R, O, ROW >, 
+            const MatrixExpression< const Matrix< T >, 
+                const Matrix< T >, M_TRANS >, 
+            VM_MULT, ROW >
+    operator*( const VectorExpression< const T, const L, const R, O, ROW >& x, 
+            const MatrixExpression< const Matrix< T >, 
+            const Matrix< T >, M_TRANS >& A ) {
+        return VectorExpression< const T, 
+            const VectorExpression< const T, const L, const R, O, ROW >, 
+            const MatrixExpression< const Matrix< T >, 
+                const Matrix< T >, M_TRANS >, 
+            VM_MULT, ROW >( x, A );
+    }
     // y = x * t( A )       row vector x
     template< typename T, VecType M >
     Vector< T, M >& Vector< T, M >::operator=( const
@@ -323,7 +430,7 @@ namespace xmagma {
             mv_mult( proxy.rhs().lhs(), proxy.lhs(), result, MagmaNoTrans, 1, 0 );
             *this = result;
         } else {
-            mv_mult( proxy.rhs(), proxy.lhs(), *this, MagmaNoTrans, 1, 0 );
+            mv_mult( proxy.rhs().lhs(), proxy.lhs(), *this, MagmaNoTrans, 1, 0 );
         }
         return *this;
     }

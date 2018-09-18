@@ -4,22 +4,22 @@
         <activeConfTypeElem>2</activeConfTypeElem>
         <activeConfIndexElem>0</activeConfIndexElem>
     </data>
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="31">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="32">
         <file>
             <url>include/xmagma_operations.h</url>
-            <bookmark id="31">
-                <name/>
-                <line>366</line>
-                <key/>
-            </bookmark>
             <bookmark id="26">
                 <name/>
-                <line>1103</line>
+                <line>1093</line>
                 <key/>
             </bookmark>
             <bookmark id="30">
                 <name/>
-                <line>1208</line>
+                <line>1198</line>
+                <key/>
+            </bookmark>
+            <bookmark id="32">
+                <name/>
+                <line>2214</line>
                 <key/>
             </bookmark>
         </file>
