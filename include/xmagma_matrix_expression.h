@@ -46,9 +46,9 @@ namespace xmagma {
         R& rhs() const{ return rhs_ ; }
         
         // Return dimensions of the resulting matrix
-        magma_int_t size1() const { return MatrixSize< L, R, O >::size1( 
+        magma_int_t size1() const { return MatrixSize< const L, const R, O >::size1( 
                 lhs_, rhs_ ) ; }
-        magma_int_t size2() const { return MatrixSize< L, R, O >::size2( 
+        magma_int_t size2() const { return MatrixSize< const L, const R, O >::size2( 
                 lhs_, rhs_ ) ; }
     private: 
         L& lhs_;

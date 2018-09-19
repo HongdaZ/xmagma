@@ -316,13 +316,13 @@ namespace xmagma {
     template< typename T, typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
     VectorExpression< const T, 
-            const VectorExpression< const T, const L1, const R1, O1, COL >, 
+            const VectorExpression< const T, const L1, const R1, O1, ROW >, 
             const MatrixExpression< const L2, const R2, O2 >, VM_MULT, ROW >
     operator*( const VectorExpression< const T, const L1, 
-            const R1, O1, COL >& x, 
+            const R1, O1, ROW >& x, 
             const MatrixExpression< const L2, const R2, O2 >& A ) {
         return VectorExpression< const T,
-                const VectorExpression< const T, const L1, const R1, O1, COL >, 
+                const VectorExpression< const T, const L1, const R1, O1, ROW >, 
                 const MatrixExpression< const L2, const R2, O2 >, VM_MULT,
                 ROW >( x, A );
     }

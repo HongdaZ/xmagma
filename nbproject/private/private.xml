@@ -4,22 +4,27 @@
         <activeConfTypeElem>2</activeConfTypeElem>
         <activeConfIndexElem>0</activeConfIndexElem>
     </data>
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="32">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="37">
         <file>
             <url>include/xmagma_operations.h</url>
+            <bookmark id="37">
+                <name/>
+                <line>589</line>
+                <key/>
+            </bookmark>
             <bookmark id="26">
                 <name/>
-                <line>1093</line>
+                <line>1188</line>
                 <key/>
             </bookmark>
             <bookmark id="30">
                 <name/>
-                <line>1198</line>
+                <line>1293</line>
                 <key/>
             </bookmark>
             <bookmark id="32">
                 <name/>
-                <line>2214</line>
+                <line>2309</line>
                 <key/>
             </bookmark>
         </file>
@@ -31,8 +36,6 @@
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_operations.h</file>
             <file>file:/home/hzhang/Documents/xmagma/tests/xmagma_test1.cpp</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_matrix_expression.h</file>
-            <file>file:/home/hzhang/Documents/xmagma/include/xmagma.h</file>
-            <file>file:/home/hzhang/Documents/xmagma/include/xmagma_forwards.h</file>
             <file>file:/home/hzhang/Documents/xmagma/xmagma_vector.h</file>
         </group>
     </open-files>

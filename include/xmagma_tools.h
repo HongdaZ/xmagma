@@ -18,16 +18,16 @@ namespace xmagma {
     template< typename L, typename R, Oper O > 
     class MatrixSize {
     public: 
-        static magma_int_t size1( L& lhs, R& rhs ) { return lhs.size1(); }
+        static magma_int_t size1( L& lhs, R& rhs )  { return lhs.size1(); }
         static magma_int_t size2( L& lhs, R& rhs ) { return rhs.size2(); }
     };
     
     // v %*% t( v )
     template< typename L, typename R >
-    class MatrixSize< const L, const R, V_OUTER > {
+    class MatrixSize< L, R, V_OUTER > {
     public:
-        static magma_int_t size1( L& lhs, R& rhs ) { return lhs.size(); }
-        static magma_int_t size2( L& lhs, R& rhs ) { return rhs.size() ; }
+        static magma_int_t size1( L& lhs, R& rhs ) { return lhs.size1(); }
+        static magma_int_t size2( L& lhs, R& rhs ) { return rhs.size1() ; }
     };
     
     // A * a 

@@ -65,4 +65,23 @@ xV5 <- t( c( 7, 13, 11 ) )
 xV6 <- t( c( 17, 19, 23 ) )
 t( 2 * xV4 - xV3 / 2 ) %*% t( 2 * xV5 * 2 / 2 + xV6 * 2 ) 
 xV3 <- xMat6 %*% xV4
-xV7 <- xV6 %*% xMat6
+xV7 <- xV6 %*% xMat6 + xV7
+xV3 <- t( xMat6 ) %*% xV4 + xV3
+xV7 <- xV6 %*% t( xMat6 ) + xV6
+xV3 = ( xMat6 * 2 ) %*% xV4
+xV7 = xV6 %*% ( xMat6 / 2 ) + xV6 / 2
+xV3 = xMat6 %*% ( xV4 + xV3 )
+xV7 = ( xV6 - xV7 ) %*% xMat6
+xV3 = t( xMat6 * 2 ) %*% xV4
+xV7 = xV7 %*% t( xMat6 + xMat5 )
+xV3 = t( xMat6 ) %*% ( xV4 + xV3 )
+xV7 = ( xV7 / 2 ) %*% t( xMat6 )
+xV3 = ( xMat6 + xMat5 ) %*% ( xV4 + xV3 )
+xV7 = ( xV7 / 2 ) %*% ( xMat6 * 2 )
+xV3 = t( xMat6 + xMat5 ) %*% ( xV4 / 2 )
+xV7 = ( xV7 / 2 ) %*% t( xMat6 * 2 )
+xV7
+xV7 <- xV7 + ( xV6 / 2 ) %*% t( xMat6 * 2 ) * 10000
+xV7 <- xV7 - ( xV6 / 2 ) %*% t( xMat6 * 2 ) * 100000
+xMat6 = xV3 %*% t( xV3 )
+xMat6 = xV3 %*% t( xV3 ) * 3 
