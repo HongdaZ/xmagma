@@ -170,6 +170,33 @@ namespace xmagma{
         magmablas_dtranspose( a.size1(), a.size2(), a.get_pointer(),
                 a.ld(), ta.get_pointer(), ta.ld(), Backend::get_queue() ); 
     }
+    // inverse
+    void inv( Matrix< float >& A ) {
+        magma_int_t ldwork, *ipiv, info;
+        magmaFloat_ptr dwork;
+        magma_imalloc_cpu( &ipiv, A.size1() );
+        ldwork = A.size1() * magma_get_sgetri_nb( A.size1() );
+        magma_smalloc( &dwork,  ldwork );
+        magma_sgetrf_gpu( A.size1(), A.size1(), A.get_pointer(), 
+                A.ld(), ipiv, &info );
+        magma_sgetri_gpu( A.size1(), A.get_pointer(), 
+                A.ld(), ipiv, dwork, ldwork, &info );
+        magma_free_cpu( ipiv );
+        magma_free( dwork );
+    }
+    void inv( Matrix< double >& A ) {
+        magma_int_t ldwork, *ipiv, info;
+        magmaDouble_ptr dwork;
+        magma_imalloc_cpu( &ipiv, A.size1() );
+        ldwork = A.size1() * magma_get_dgetri_nb( A.size1() );
+        magma_dmalloc( &dwork,  ldwork );
+        magma_dgetrf_gpu( A.size1(), A.size1(), A.get_pointer(), 
+                A.ld(), ipiv, &info );
+        magma_dgetri_gpu( A.size1(), A.get_pointer(), 
+                A.ld(), ipiv, dwork, ldwork, &info );
+        magma_free_cpu( ipiv );
+        magma_free( dwork );
+    }
     // inplace add
     template< typename T >
     void inplace_add( Matrix< T >& b, const Matrix< T >& a, 
@@ -680,6 +707,22 @@ namespace xmagma{
     < const LL, const LR, LO >, const MatrixExpression
     < const RL, const RR, RO >, M_MULT >
                 ( A, B );
+    }
+    // solve( A ): inverse of A
+    template< typename T >
+    MatrixExpression< const Matrix< T >, const Matrix< T >, M_INV >
+    solve( const Matrix< T >& A ) {
+        return MatrixExpression< const Matrix< T >, const Matrix< T >,
+                M_INV >( A, A );
+    }
+    // solve( expression( A ) )
+    template< typename L, typename R, Oper O >
+    MatrixExpression< const MatrixExpression< const L, const R, O >,
+            const MatrixExpression< const L, const R, O >, M_INV > 
+    solve( const MatrixExpression< const L, const R, O >& proxy ) {
+        return MatrixExpression< const MatrixExpression< const L, const R,
+                O >, const MatrixExpression< const L, const R, O >, M_INV >
+                ( proxy, proxy );
     }
     /* Vector expressions */
     // expression( x ) + expression( y )
@@ -1518,6 +1561,19 @@ namespace xmagma{
             lhs = t( temp );
         }
     };
+    // A = inv( expression )
+    template< typename T, typename L, typename R, Oper O >
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
+            const MatrixExpression< const L, const R, O >, 
+            const MatrixExpression< const L, const R, O >, M_INV > > {
+    public:
+        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        const MatrixExpression< const L, const R, O >, 
+        const MatrixExpression< const L, const R, O >, M_INV >& rhs ) {
+            Matrix< T > temp( rhs.rhs() );
+            lhs = solve( temp );
+        }
+    };
     // A += B
     template< typename T >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, Matrix< T > > {
@@ -1559,6 +1615,20 @@ namespace xmagma{
         }
                                                                                   
     };
+    // A += inv( B )
+    template< typename T >
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, 
+            MatrixExpression< const Matrix< T >, 
+                                         const Matrix< T >, M_INV > > {
+    public:
+        static void apply( Matrix< T >& lhs, const MatrixExpression<
+                const Matrix< T >,
+                const Matrix< T >, M_INV >& rhs ) {
+            Matrix< T > temp( solve( rhs.rhs() ) );
+            lhs += temp;
+        }
+                                                                                  
+    };
     // A += trans( expression( B ) )
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
@@ -1572,6 +1642,20 @@ namespace xmagma{
             Matrix< T > temp2( temp1.size2(), temp1.size1() );
             trans( temp1, temp2 );
             lhs += temp2;
+        }
+    };
+    // A += inv( expression( B ) )
+    template< typename T, typename L, typename R, Oper O >
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
+    const MatrixExpression< const L, const R, O >, const MatrixExpression<
+    const L, const R, O >, M_INV > > {
+    public:
+        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        const MatrixExpression< const L, const R, O >,
+        const MatrixExpression< const L, const R, O >, M_INV >& rhs ) {
+            Matrix< T > temp( rhs.rhs());
+            inv( temp );
+            lhs += temp;
         }
     };
     // A -= B
@@ -1593,6 +1677,20 @@ namespace xmagma{
             lhs -= temp;
         }
     };
+    // A -= inv( B )
+    template< typename T >
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, 
+            MatrixExpression< const Matrix< T >, 
+                                         const Matrix< T >, M_INV > > {
+    public:
+        static void apply( Matrix< T >& lhs, const MatrixExpression<
+                const Matrix< T >,
+                const Matrix< T >, M_INV >& rhs ) {
+            Matrix< T > temp( solve( rhs.rhs() ) );
+            lhs -= temp;
+        }
+                                                                                  
+    };
     // A -= trans( expression( B ) )
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
@@ -1606,6 +1704,20 @@ namespace xmagma{
             Matrix< T > temp2( temp1.size2(), temp1.size1() );
             trans( temp1, temp2 );
             lhs -= temp2;
+        }
+    };
+    // A -= inv( expression( B ) )
+    template< typename T, typename L, typename R, Oper O >
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression<
+    const MatrixExpression< const L, const R, O >, const MatrixExpression<
+    const L, const R, O >, M_INV > > {
+    public:
+        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        const MatrixExpression< const L, const R, O >,
+        const MatrixExpression< const L, const R, O >, M_INV >& rhs ) {
+            Matrix< T > temp( rhs.rhs() );
+            inv( temp );
+            lhs -= temp;
         }
     };
     /*                        A Oper B * a                         */
@@ -4110,6 +4222,8 @@ namespace xmagma{
             v_outer( temp1 , temp, lhs, -rhs.rhs() );
         }
     };
+    
+    
 }
 
 #endif /* XMAGMA_OPERATIONS_H */

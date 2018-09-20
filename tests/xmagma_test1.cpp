@@ -581,6 +581,38 @@ xMat6 + ( xMat6 + xMat6 );
    xMat6 += xV3 * 2 * ( xV5 + xV6 );
    printf( "xMat6\n");
    print( xMat6 );
+   xMat6 -= ( xV3 + xV4 ) * 2 * ( xV5 + xV6 ) + xMat5;
+   printf( "xMat6\n");
+   print( xMat6 );
+   inv( xMat6 );
+   printf( "xMat6\n");
+   print( xMat6 );
+   xMat6 = solve( xMat6 );
+   printf( "xMat6\n");
+   print( xMat6 );
+   xMat5 = solve( xMat6 );
+   printf( "xMat5\n");
+   print( xMat5 );
+   xmagma::Matrix< double > xMat11;
+   xMat11 = solve( xMat6 );
+   printf( "xMat11\n");
+   print( xMat11 );
+   xMat6 = solve( xMat11 * 2 );
+   printf( "xMat6\n");
+   print( xMat6 );
+   xMat6 += solve( xMat11 );
+   printf( "xMat6\n");
+   print( xMat6 );
+   xMat6 += solve( xMat11 / 2 );
+   printf( "xMat6\n");
+   print( xMat6 );
+   xMat6 -= solve( xMat11 );
+   printf( "xMat6\n");
+   print( xMat6 );
+   xMat6 -= solve( xMat11 / 2 );
+   printf( "xMat6\n");
+   print( xMat6 );
+   
    
    magma_free_cpu (a); // free host memory
    magma_free (d_a ); // free device memory

@@ -58,6 +58,9 @@ namespace xmagma {
         // A = trans( B )
         SelfType& operator=( const MatrixExpression< const SelfType,
                 const SelfType, M_TRANS >& proxy );
+        // A = solve( B )
+        SelfType& operator=( const MatrixExpression< const SelfType,
+                const SelfType, M_INV >& proxy );
         // A = A + B
         template< typename L, typename R, Oper O>
         SelfType& operator+=( const MatrixExpression< const L,

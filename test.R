@@ -85,3 +85,14 @@ xV7 <- xV7 + ( xV6 / 2 ) %*% t( xMat6 * 2 ) * 10000
 xV7 <- xV7 - ( xV6 / 2 ) %*% t( xMat6 * 2 ) * 100000
 xMat6 = xV3 %*% t( xV3 )
 xMat6 = xV3 %*% t( xV3 ) * 3 
+xMat6 <- xMat6 + xV3 %*% t( xV3 )
+xMat6 <- xMat6 + xV3 %*% t( xV3 ) * 3
+xMat6 <- xMat6 - ( xV3 %*% t( xV3 ) )
+xMat6 = xV3 %*% xV5
+xMat6 = 2 * ( xV3 %*% xV5 )
+xMat6 = xMat6 + ( xV3 %*% xV5 )
+xMat6 <- xMat6 - ( xV3 %*% xV5 ) * 2
+xMat6 = xMat6 + ( t( xV5 ) %*% xV5 )
+xMat6 = xMat6 + xV3 %*% ( xV5 + xV6 ) ;
+xMat6 = xMat6 + ( xV3 * 2 ) %*% ( xV5 + xV6 )
+xMat6 = xMat6 - ( ( ( xV3 + xV4 ) * 2 ) %*% ( xV5 + xV6 ) + xMat5 )

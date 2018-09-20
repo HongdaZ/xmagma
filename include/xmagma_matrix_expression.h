@@ -172,6 +172,28 @@ namespace xmagma {
         }
         return *this;
     }
+    // A = solve( B )
+    template< typename T >
+    Matrix< T >& Matrix< T >::operator=( const MatrixExpression< const 
+        SelfType, const SelfType, M_INV >& proxy ) {
+        // A = solve( A ), m = n
+        if ( elements_ == proxy.lhs().get_pointer() ) {
+            if( size1_ == size2_ ) {
+                inv( *this );
+            } 
+        } else {
+            // lhs is empty matrix
+            if ( size1_ == 0 || size2_ == 0 ) {
+                size1_ = proxy.lhs().size1();
+                size2_ = proxy.lhs().size2();
+                ld_ = magma_roundup( size1_, 32 );
+                mem_creator< T >( &elements_, ld_* size2_ );
+            } 
+            *this = proxy.lhs();
+            inv( *this );
+        }
+        return *this;
+    }
     // A += expression( B )
     template< typename T >
     template< typename L, typename R, Oper O >

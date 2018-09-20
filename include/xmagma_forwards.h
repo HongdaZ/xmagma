@@ -25,6 +25,7 @@ namespace xmagma {
         M_ASSIGN,
         M_INPLACE_ADD,
         M_INPLACE_SUB,
+        M_INV,
         V_ADD,
         V_SUB,
         V_TRANS,
