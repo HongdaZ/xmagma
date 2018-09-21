@@ -73,12 +73,12 @@ namespace xmagma {
         SelfType& operator=( const VectorExpression< const T, const Vector< T, M >,
                 const Matrix< T >, VM_MULT, M >& proxy );
         // v1 = t( A ) * v2
-        SelfType& operator=( const VectorExpression< const T, const MatrixExpression<
+        SelfType& operator=( const VectorExpression< const T, const MatrixExpression< const T,
         const Matrix< T >, const Matrix< T >, M_TRANS >,
                 const Vector< T, M >, MV_MULT, M >& proxy );
         // v1 = v2 * t( A )
         SelfType& operator=( const VectorExpression< const T, const Vector< T, M >,
-                const MatrixExpression< const Matrix< T >,
+                const MatrixExpression< const T, const Matrix< T >,
                 const Matrix< T >, M_TRANS >,
                  VM_MULT, M >& proxy );
         

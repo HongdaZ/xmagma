@@ -37,7 +37,7 @@ namespace xmagma {
          * O                   type of operator
          */
         template< typename L, typename R, Oper O >
-        explicit Matrix( MatrixExpression< const L, const R, O > const& 
+        explicit Matrix( MatrixExpression< const T, const L, const R, O > const& 
             proxy );
         
         /* Deep copy of the matrix */
@@ -53,29 +53,29 @@ namespace xmagma {
         // A = a
         SelfType& operator=( const T a );
         template< typename L, typename R, Oper O>
-        SelfType& operator=( const MatrixExpression< const L, const R,
+        SelfType& operator=( const MatrixExpression< const T, const L, const R,
                 O >& proxy );
         // A = trans( B )
-        SelfType& operator=( const MatrixExpression< const SelfType,
+        SelfType& operator=( const MatrixExpression< const T, const SelfType,
                 const SelfType, M_TRANS >& proxy );
         // A = solve( B )
-        SelfType& operator=( const MatrixExpression< const SelfType,
+        SelfType& operator=( const MatrixExpression< const T, const SelfType,
                 const SelfType, M_INV >& proxy );
         // A = A + B
         template< typename L, typename R, Oper O>
-        SelfType& operator+=( const MatrixExpression< const L,
+        SelfType& operator+=( const MatrixExpression< const T, const L,
                 const R, O> & proxy );
         SelfType& operator+=( const SelfType& other );
         // A = A - B;
         template< typename L, typename R, Oper O >
-        SelfType& operator-=( const MatrixExpression< const L,
+        SelfType& operator-=( const MatrixExpression< const T, const L,
                 const R, O >& proxy );
         SelfType& operator-=( const SelfType& other );
         // A *= a inplace scale a matrix
         SelfType& operator*=( T );
         SelfType& operator/=( T );
         // -A
-        MatrixExpression< const SelfType, const SelfType,  M_NEGATIVE > 
+        MatrixExpression<const T, const SelfType, const SelfType,  M_NEGATIVE > 
         operator-() const;
         
         /* Return dimensions of the matrix */

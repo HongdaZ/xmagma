@@ -415,313 +415,372 @@ namespace xmagma{
         magma_dger( x.size(), y.size(), a, x.get_pointer(), 1, y.get_pointer(), 
                 1, A.get_pointer(), A.ld(), Backend::get_queue() );
     }
+    // Determinant of matrix det( A )
+    float det( Matrix< float > A ) {
+        float res = 0;
+        magma_int_t *ipiv, info, s = 0;
+        float *mat;
+        magma_imalloc_cpu( &ipiv, A.size1() );
+        magma_sgetrf_gpu( A.size1(), A.size2(), A.get_pointer(), 
+                A.ld(), ipiv, &info );
+        magma_smalloc_cpu( &mat, A.size1() * A.size2() );
+        RMatrix< float > rmat( mat, A.size1(), A.size2() );
+        transfer_matrix< float >( A, rmat );
+        for( magma_int_t i = 0; i != A.size1(); ++i ) {
+            s += ( ipiv[ i ] == i + 1 ) ? 0 : 1;
+            res += log( rmat( i, i ) );
+        }
+                
+        magma_free_cpu( ipiv );
+        magma_free_cpu( mat );
+        
+        s = s % 2;
+        s = ( s == 0 ) ? 1 : -1;
+        res = s * exp( res );
+        return( res );
+    }
+    double det( Matrix< double > A ) {
+        double res = 1;
+        magma_int_t *ipiv, info, s = 0;
+        double *mat;
+        magma_imalloc_cpu( &ipiv, A.size1() );
+        magma_dgetrf_gpu( A.size1(), A.size2(), A.get_pointer(), 
+                A.ld(), ipiv, &info );
+        magma_dmalloc_cpu( &mat, A.size1() * A.size2() );
+        RMatrix< double > rmat( mat, A.size1(), A.size2() );
+        transfer_matrix< double >( A, rmat );
+        for( magma_int_t i = 0; i != A.size1(); ++i ) {
+            s += ( ipiv[ i ] == i + 1 ) ? 0 : 1;
+            res *= rmat( i, i );
+        }
+                
+        magma_free_cpu( ipiv );
+        magma_free_cpu( mat );
+        
+        s = s % 2;
+        s = ( s == 0 ) ? 1 : -1;
+        res = s * res;
+        return( res );
+    }
+    // Determinant of matrix det( expression( A ) )
+    template< typename L, typename R, Oper O >
+    float det( const MatrixExpression< const float, const L, const R, O >& A ) {
+        Matrix< float > temp( A );
+        return( det( temp ) );
+    }
+    template< typename L, typename R, Oper O >
+    double det( const MatrixExpression< const double, const L, const R, O >& A ) {
+        Matrix< double > temp( A );
+        return( det( temp ) );
+    }
+    
     /* Matrix expressions */
     // expression( A ) + expression( B )
-    template< typename L1, typename R1, Oper O1,
+    template< typename T, typename L1, typename R1, Oper O1,
                      typename L2, typename R2, Oper O2 >
-    MatrixExpression< const MatrixExpression< const L1, const R1, O1 >,
-            const MatrixExpression< const L2, const R2, O2 >, M_ADD >
-    operator+( MatrixExpression< const L1, const R1, O1 > const& proxy1,
-            MatrixExpression< const L2, const R2, O2 > const& proxy2 ) {
+    MatrixExpression< const T, const MatrixExpression< const T, const L1, const R1, O1 >,
+            const MatrixExpression< const T, const L2, const R2, O2 >, M_ADD >
+    operator+( MatrixExpression< const T, const L1, const R1, O1 > const& proxy1,
+            MatrixExpression< const T, const L2, const R2, O2 > const& proxy2 ) {
         assert( proxy1.size1() == proxy2.size1()
                 && proxy1.size2() == proxy2.size2() 
                 && bool( "dimensions not match!") );
-        return MatrixExpression< const MatrixExpression< const L1, const R1,
-                O1 >, const MatrixExpression< const L2, const R2, O2 >, M_ADD >
+        return MatrixExpression< const T, const MatrixExpression< const T, const L1, const R1,
+                O1 >, const MatrixExpression< const T, const L2, const R2, O2 >, M_ADD >
                 ( proxy1, proxy2 );
     }
     // expression( A ) + B
     template< typename L, typename R, Oper O, typename T >
-    MatrixExpression< const MatrixExpression< const L, const R, O >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >, 
             const Matrix< T >, M_ADD >
-    operator+( MatrixExpression< const L, const R, O > const& proxy1,
+    operator+( MatrixExpression< const T, const L, const R, O > const& proxy1,
             Matrix< T > const& proxy2 ) {
         assert( proxy1.size1() == proxy2.size1()
                 && proxy1.size2() == proxy2.size2() 
                 && bool( "Dimension not match!" ) );
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
                 const Matrix< T >, M_ADD >( proxy1, proxy2 );
     }
     // A + expression( B ) = expression( B ) + A
     template< typename L, typename R, Oper O, typename T >
-    MatrixExpression< const MatrixExpression< const L, const R, O >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >, 
             const Matrix< T >, M_ADD >
     operator+( Matrix< T > const& proxy2,
-            MatrixExpression< const L, const R, O > const& proxy1
+            MatrixExpression< const T, const L, const R, O > const& proxy1
              ) {
         
         return ( proxy1 + proxy2 );
     }
     // A + B
     template< typename T >
-    MatrixExpression< const Matrix< T >, const Matrix< T >, M_ADD >
+    MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_ADD >
     operator+( const Matrix< T >& A, const Matrix< T >& B ) {
-        return MatrixExpression< const Matrix< T >,
+        return MatrixExpression< const T, const Matrix< T >,
                 const Matrix< T >, M_ADD >( A, B );
     }
     // expression( A ) - expression( B )
     template< typename L1, typename R1, Oper O1,
-            typename L2, typename R2, Oper O2 >
-    MatrixExpression< const MatrixExpression< const L1, const R1, O1 >,
-            const MatrixExpression< const L2, const R2, O2 >, M_SUB >
-    operator-( MatrixExpression< const L1, const R1, O1 > const& proxy1,
-            MatrixExpression< const L2, const R2, O2 > const& proxy2 ) {
+            typename L2, typename R2, Oper O2, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L1, const R1, O1 >,
+            const MatrixExpression< const T, const L2, const R2, O2 >, M_SUB >
+    operator-( MatrixExpression< const T, const L1, const R1, O1 > const& proxy1,
+            MatrixExpression< const T, const L2, const R2, O2 > const& proxy2 ) {
         assert( proxy1.size1() == proxy2.size1() 
                 && proxy1.size2() == proxy2.size2() 
                 && bool( "Dimension not match!" ) );
-        return MatrixExpression< const MatrixExpression< const L1, const R1,
-                O1 >, const MatrixExpression< const L2, const R2, O2 >, M_SUB >
+        return MatrixExpression< const T, const MatrixExpression< const T, const L1, const R1,
+                O1 >, const MatrixExpression< const T, const L2, const R2, O2 >, M_SUB >
                 ( proxy1, proxy2 );
     } 
     // expression( A ) - B
     template< typename L, typename R, Oper O, typename T >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const Matrix< T >, M_SUB >
-    operator-( MatrixExpression< const L, const R, O > const& proxy1,
+    operator-( MatrixExpression< const T, const L, const R, O > const& proxy1,
             Matrix< T > const& proxy2 ) {
         assert( proxy1.size1() == proxy2.size1() 
                 && proxy1.size2() == proxy2.size2() 
                 && bool( "Dimension not match!" ) );
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
                 const Matrix< T >, M_SUB >( proxy1, proxy2 );
     }
     // A - expression( B )
     template< typename L, typename R, Oper O, typename T >
-    MatrixExpression< const Matrix< T >,
-            const MatrixExpression< const L, const R, O >,
+    MatrixExpression< const T, const Matrix< T >,
+            const MatrixExpression< const T, const L, const R, O >,
             M_SUB >
     operator-( Matrix< T > const& proxy2,
-            MatrixExpression< const L, const R, O > const& proxy1 ) {
-        return MatrixExpression< const Matrix< T >,
-                const MatrixExpression< const L, const R, O >,
+            MatrixExpression< const T, const L, const R, O > const& proxy1 ) {
+        return MatrixExpression< const T, const Matrix< T >,
+                const MatrixExpression< const T, const L, const R, O >,
                  M_SUB >( proxy2, proxy1 );
     }
     // A - B
     template< typename T >
-    MatrixExpression< const Matrix< T >, const Matrix< T >, M_SUB >
+    MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_SUB >
     operator-( const Matrix< T >& A, const Matrix< T >& B ) {
-        return MatrixExpression< const Matrix< T >, const Matrix< T >, M_SUB >
+        return MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_SUB >
                 ( A, B );
     }
     // A * a
     template< typename T >
-    MatrixExpression< const Matrix< T >, const int,  M_SCALE >
+    MatrixExpression< const T, const Matrix< T >, const int,  M_SCALE >
     operator*( const Matrix< T >& A, const int& a ) {
-        return MatrixExpression< const Matrix< T >, const int, M_SCALE >
+        return MatrixExpression< const T, const Matrix< T >, const int, M_SCALE >
                 ( A,  a );
     }
     template< typename T >
-    MatrixExpression< const Matrix< T >, const float,  M_SCALE >
+    MatrixExpression< const T, const Matrix< T >, const float,  M_SCALE >
     operator*( const Matrix< T >& A, const float& a ) {
-        return MatrixExpression< const Matrix< T >, const float, M_SCALE >
+        return MatrixExpression< const T, const Matrix< T >, const float, M_SCALE >
                 ( A,  a );
     }
     template< typename T >
-    MatrixExpression< const Matrix< T >, const double,  M_SCALE >
+    MatrixExpression< const T, const Matrix< T >, const double,  M_SCALE >
     operator*( const Matrix< T >& A, const double& a ) {
-        return MatrixExpression< const Matrix< T >, const double, M_SCALE >
+        return MatrixExpression< const T, const Matrix< T >, const double, M_SCALE >
                 ( A,  a );
     }
     // expression( A ) * a;
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    template< typename L, typename R, Oper O, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const int, M_SCALE >
-    operator*( const MatrixExpression< const L, const R, O >& proxy, 
+    operator*( const MatrixExpression< const T, const L, const R, O >& proxy, 
             const int& a ) {
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const int, M_SCALE >( proxy,  a );
     }
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    template< typename L, typename R, Oper O, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const float, M_SCALE >
-    operator*( const MatrixExpression< const L, const R, O >& proxy, 
+    operator*( const MatrixExpression< const T, const L, const R, O >& proxy, 
             const float& a ) {
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const float, M_SCALE >( proxy,  a );
     }
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    template< typename L, typename R, Oper O, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const double, M_SCALE >
-    operator*( const MatrixExpression< const L, const R, O >& proxy, 
+    operator*( const MatrixExpression< const T, const L, const R, O >& proxy, 
             const double& a ) {
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const double, M_SCALE >( proxy,  a );
     }
     // a * A = A * a
     template< typename T >
-    MatrixExpression< const Matrix< T >, const int,  M_SCALE >
+    MatrixExpression< const T, const Matrix< T >, const int,  M_SCALE >
     operator*( const int& a, const Matrix< T >& A ) {
-        return MatrixExpression< const Matrix< T >, const int,  M_SCALE >( A, a );
+        return MatrixExpression< const T, const Matrix< T >, const int,  M_SCALE >( A, a );
     }
     template< typename T >
-    MatrixExpression< const Matrix< T >, const float,  M_SCALE >
+    MatrixExpression< const T, const Matrix< T >, const float,  M_SCALE >
     operator*( const float& a, const Matrix< T >& A ) {
-        return MatrixExpression< const Matrix< T >, const float,  M_SCALE >( A, a );
+        return MatrixExpression< const T, const Matrix< T >, const float,  M_SCALE >( A, a );
     }
     template< typename T >
-    MatrixExpression< const Matrix< T >, const double,  M_SCALE >
+    MatrixExpression< const T, const Matrix< T >, const double,  M_SCALE >
     operator*( const double& a, const Matrix< T >& A ) {
-        return MatrixExpression< const Matrix< T >, const double,  M_SCALE >( A, a );
+        return MatrixExpression< const T, const Matrix< T >, const double,  M_SCALE >( A, a );
     }
     // a * expression( A ); int
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    template< typename L, typename R, Oper O, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const int, M_SCALE >
-    operator*( const int& a, const MatrixExpression< const L, const R, O >& proxy ) {
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+    operator*( const int& a, const MatrixExpression< const T, const L, const R, O >& proxy ) {
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const int, M_SCALE >( proxy,  a );
     }
     // a * expression( A ); float
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    template< typename L, typename R, Oper O, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const float, M_SCALE >
-    operator*( const float& a, const MatrixExpression< const L, const R, O >& proxy ) {
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+    operator*( const float& a, const MatrixExpression< const T, const L, const R, O >& proxy ) {
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const float, M_SCALE >( proxy,  a );
     }
     // a * expression( A ); double
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    template< typename L, typename R, Oper O, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const double, M_SCALE >
-    operator*( const double& a, const MatrixExpression< const L, const R, O >& proxy ) {
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+    operator*( const double& a, const MatrixExpression< const T, const L, const R, O >& proxy ) {
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const double, M_SCALE >( proxy,  a );
     }
     // -A
     template< typename T >
-    MatrixExpression< const Matrix< T >, const Matrix< T >, M_NEGATIVE >
+    MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_NEGATIVE >
     Matrix< T >::operator-() const {
-        return MatrixExpression< const SelfType, const SelfType, M_NEGATIVE >
+        return MatrixExpression< const T, const SelfType, const SelfType, M_NEGATIVE >
                 ( *this, *this );
     }
     // A / a = A * ( 1 / a )
     template< typename T, typename S >
-    MatrixExpression< const Matrix< T >, const S, M_DIV >
+    MatrixExpression< const T, const Matrix< T >, const S, M_DIV >
     operator/( const Matrix< T >& A, const S& a ) {
         assert( a != 0 
                 && bool( "Divided by zero!" ) );
-        return MatrixExpression< const Matrix< T >, const S, M_DIV >
+        return MatrixExpression< const T, const Matrix< T >, const S, M_DIV >
                 ( A, a );
     }
     // expression( A ) / a
-    template< typename L, typename R, Oper O, typename S >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
+    template< typename L, typename R, Oper O, typename S, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const S, M_DIV >
-    operator/( const MatrixExpression< const L, const R, O >& proxy, 
+    operator/( const MatrixExpression< const T, const L, const R, O >& proxy, 
             const S& a ) {
         assert( a != 0 
                 && bool( "Divided by zero!" ) );
-        return MatrixExpression< const MatrixExpression< const L, const R, O >,
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const S, M_DIV >( proxy,  a );
     }
     // expression( v1  * t( v2 ) ) * a 
     template< typename T >
-    MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const int, M_SCALE >
-    operator*=( const MatrixExpression< const Vector< T, COL >,
+    operator*=( const MatrixExpression< const T, const Vector< T, COL >,
             const Vector< T, COL >, V_OUTER >&
     proxy, const int& a ) {
-        return MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+        return MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const int, M_SCALE >( proxy, a );
     }
     template< typename T >
-    MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const float, M_SCALE >
-    operator*=( const MatrixExpression< const Vector< T, COL >,
+    operator*=( const MatrixExpression< const T, const Vector< T, COL >,
             const Vector< T, COL >, V_OUTER >&
     proxy, const float& a ) {
-        return MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+        return MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const float, M_SCALE >( proxy, a );
     }
     template< typename T >
-    MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const double, M_SCALE >
-    operator*=( const MatrixExpression< const Vector< T, COL >,
+    operator*=( const MatrixExpression< const T, const Vector< T, COL >,
             const Vector< T, COL >, V_OUTER >&
     proxy, const double& a ) {
-        return MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+        return MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const double, M_SCALE >( proxy, a );
     }
     // a * expression( v1  * t( v2 ) )
     template< typename T >
-    MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const int, M_SCALE >
-    operator*=( const int& a, const MatrixExpression< const Vector< T, COL >,
+    operator*=( const int& a, const MatrixExpression< const T, const Vector< T, COL >,
             const Vector< T, COL >, V_OUTER >&
     proxy ) {
         return proxy * a;
     }
     template< typename T >
-    MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const float, M_SCALE >
-    operator*=( const float& a, const MatrixExpression< const Vector< T, COL >,
+    operator*=( const float& a, const MatrixExpression< const T, const Vector< T, COL >,
             const Vector< T, COL >, V_OUTER >&
     proxy ) {
         return proxy * a;
     }
     template< typename T >
-    MatrixExpression< const MatrixExpression< const Vector< T, COL >, 
+    MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_OUTER >, const double, M_SCALE >
-    operator*=( const double& a, const MatrixExpression< const Vector< T, COL >,
+    operator*=( const double& a, const MatrixExpression< const T, const Vector< T, COL >,
             const Vector< T, COL >, V_OUTER >&
     proxy ) {
         return proxy * a;
     }
     // A * B 
     template< typename T >
-    MatrixExpression< const Matrix< T >, const Matrix< T >, M_MULT >
+    MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_MULT >
     operator*( const Matrix< T >& A, const Matrix< T >& B ) {
-        return MatrixExpression< const Matrix< T >, const Matrix< T >, M_MULT >
+        return MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_MULT >
                 ( A, B );
     }
     // A * expression( B )  
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const Matrix< T >, const MatrixExpression
-    < const L, const R, O >, M_MULT >
+    MatrixExpression< const T, const Matrix< T >, const MatrixExpression
+    < const T, const L, const R, O >, M_MULT >
     operator*( const Matrix< T >& A, const MatrixExpression
-    < const L, const R, O >& B ) {
-        return MatrixExpression< const Matrix< T >, const MatrixExpression
-    < const L, const R, O >, M_MULT >
+    < const T, const L, const R, O >& B ) {
+        return MatrixExpression< const T, const Matrix< T >, const MatrixExpression
+    < const T, const L, const R, O >, M_MULT >
                 ( A, B );
     }
     // expresssion( A ) * B 
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression
-    < const L, const R, O >, const Matrix< T >, M_MULT >
+    MatrixExpression< const T, const MatrixExpression
+    < const T, const L, const R, O >, const Matrix< T >, M_MULT >
     operator*( const MatrixExpression
-    < const L, const R, O >& A, const Matrix< T >& B ) {
-        return MatrixExpression< const MatrixExpression
-    < const L, const R, O >, const Matrix< T >, M_MULT >
+    < const T, const L, const R, O >& A, const Matrix< T >& B ) {
+        return MatrixExpression< const T, const MatrixExpression
+    < const T, const L, const R, O >, const Matrix< T >, M_MULT >
                 ( A, B );
     }
     // expresssion( A ) * expression( B ) 
     template< typename LL, typename LR, Oper LO,
-            typename RL, typename RR, Oper RO >
-    MatrixExpression< const MatrixExpression
-    < const LL, const LR, LO >, const MatrixExpression
-    < const RL, const RR, RO >, M_MULT >
+            typename RL, typename RR, Oper RO, typename T >
+    MatrixExpression< const T, const MatrixExpression
+    < const T, const LL, const LR, LO >, const MatrixExpression
+    < const T, const RL, const RR, RO >, M_MULT >
     operator*( const MatrixExpression
-    < const LL, const LR, LO >& A, const MatrixExpression
-    < const RL, const RR, RO >& B ) {
-        return MatrixExpression< const MatrixExpression
-    < const LL, const LR, LO >, const MatrixExpression
-    < const RL, const RR, RO >, M_MULT >
+    < const T, const LL, const LR, LO >& A, const MatrixExpression
+    < const T, const RL, const RR, RO >& B ) {
+        return MatrixExpression< const T, const MatrixExpression
+    < const T, const LL, const LR, LO >, const MatrixExpression
+    < const T, const RL, const RR, RO >, M_MULT >
                 ( A, B );
     }
     // solve( A ): inverse of A
     template< typename T >
-    MatrixExpression< const Matrix< T >, const Matrix< T >, M_INV >
+    MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_INV >
     solve( const Matrix< T >& A ) {
-        return MatrixExpression< const Matrix< T >, const Matrix< T >,
+        return MatrixExpression< const T, const Matrix< T >, const Matrix< T >,
                 M_INV >( A, A );
     }
     // solve( expression( A ) )
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
-            const MatrixExpression< const L, const R, O >, M_INV > 
-    solve( const MatrixExpression< const L, const R, O >& proxy ) {
-        return MatrixExpression< const MatrixExpression< const L, const R,
-                O >, const MatrixExpression< const L, const R, O >, M_INV >
+    template< typename L, typename R, Oper O, typename T >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
+            const MatrixExpression< const T, const L, const R, O >, M_INV > 
+    solve( const MatrixExpression< const T, const L, const R, O >& proxy ) {
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R,
+                O >, const MatrixExpression< const T, const L, const R, O >, M_INV >
                 ( proxy, proxy );
     }
     /* Vector expressions */
@@ -979,84 +1038,84 @@ namespace xmagma{
     }
     // x * t( y ) 
     template< typename T >
-    MatrixExpression< const Vector< T, COL >, const Vector< T, COL >, V_OUTER >
+    MatrixExpression< const T, const Vector< T, COL >, const Vector< T, COL >, V_OUTER >
     operator*( const Vector< T, COL >& x, const VectorExpression< const T,
         const Vector< T, COL >, const Vector< T, COL >, V_TRANS, ROW>& y ) {
-        return MatrixExpression< const Vector< T, COL >, 
+        return MatrixExpression< const T, const Vector< T, COL >, 
                 const Vector< T, COL >, V_OUTER >( x, y.lhs() );
     }
     // expression( x ) * t( y )
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const VectorExpression< const T, const L, const R, O, COL >,
+    MatrixExpression< const T, const VectorExpression< const T, const L, const R, O, COL >,
             const Vector< T, COL >, V_OUTER >
     operator*( const VectorExpression< const T, const L, const R, O, COL >& x,
             const VectorExpression< const T, const Vector< T, COL >, 
             const Vector< T, COL >, V_TRANS, ROW >& y ) {
-        return MatrixExpression< const VectorExpression< const T, const L, 
+        return MatrixExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, COL >, const Vector< T, COL >, V_OUTER >( x, y.lhs() );
     }
     // x * t( expression( y ) )
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const Vector< T, COL >, const VectorExpression< const T, const L,
+    MatrixExpression< const T, const Vector< T, COL >, const VectorExpression< const T, const L,
             const R, O, COL >, V_OUTER >
     operator*( const Vector< T, COL >& x, const VectorExpression< const T,
         const VectorExpression< const T, const L, const R, O, COL >, 
             const VectorExpression< const T, const L, const R, O, COL >, V_TRANS, ROW>& y ) {
-        return MatrixExpression< const Vector< T, COL >, 
+        return MatrixExpression< const T, const Vector< T, COL >, 
                 const VectorExpression< const T, const L, const R, O, COL >, V_OUTER >( x, y.lhs() );
     }
     // expression( x ) * t( expression( y ) )
     template< typename T, typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
-    MatrixExpression< const VectorExpression< const T, const L1, const R1, O1, COL >, 
+    MatrixExpression< const T, const VectorExpression< const T, const L1, const R1, O1, COL >, 
             const VectorExpression< const T, const L2,
             const R2, O2, COL >, V_OUTER >
     operator*( const VectorExpression< const T, const L1, const R1, O1, COL >& x,
             const VectorExpression< const T,
         const VectorExpression< const T, const L2, const R2, O2, COL >, 
             const VectorExpression< const T, const L2, const R2, O2, COL >, V_TRANS, ROW>& y ) {
-        return MatrixExpression< const VectorExpression< const T, const L1, const R1, O1, COL >, 
+        return MatrixExpression< const T, const VectorExpression< const T, const L1, const R1, O1, COL >, 
                 const VectorExpression< const T, const L2, const R2, O2, COL >, 
                 V_OUTER >( x, y.lhs() );
     }
 
     // x * y (COL * ROW)
     template< typename T >
-    MatrixExpression< const Vector< T, COL >, const Vector< T, ROW >, V_OUTER >
+    MatrixExpression< const T, const Vector< T, COL >, const Vector< T, ROW >, V_OUTER >
     operator*( const Vector< T, COL >& x, const Vector< T, ROW >& y ) {
-        return MatrixExpression< const Vector< T, COL >, 
+        return MatrixExpression< const T, const Vector< T, COL >, 
                 const Vector< T, ROW >, V_OUTER >( x, y );
     }
     // expression( x ) * y (COL * ROW)
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const VectorExpression< const T, const L, const R, O, COL >, 
+    MatrixExpression< const T, const VectorExpression< const T, const L, const R, O, COL >, 
             const Vector< T, ROW >, V_OUTER >
     operator*( const VectorExpression< const T, const L, const R, O, COL >& x, 
             const Vector< T, ROW >& y ) {
-        return MatrixExpression< const VectorExpression< const T, const L, 
+        return MatrixExpression< const T, const VectorExpression< const T, const L, 
                 const R, O, COL >, 
                 const Vector< T, ROW >, V_OUTER >( x, y );
     }
     // x * expression( y ) (COL * ROW)
     template< typename T, typename L, typename R, Oper O >
-    MatrixExpression< const Vector< T, COL >, 
+    MatrixExpression< const T, const Vector< T, COL >, 
             const VectorExpression< const T, const L, const R, O, ROW >, 
             V_OUTER >
     operator*( const Vector< T, COL >& x, 
             const VectorExpression< const T, const L, const R, O, ROW >& y ) {
-        return MatrixExpression< const Vector< T, COL >, 
+        return MatrixExpression< const T, const Vector< T, COL >, 
             const VectorExpression< const T, const L, const R, O, ROW >, 
             V_OUTER >( x, y );
     }
     // expression( x ) * expression( y ) (COL * ROW)
     template< typename T, typename L1, typename R1, Oper O1,
             typename L2, typename R2, Oper O2 >
-    MatrixExpression< const VectorExpression< const T, const L1, const R1, O1, COL >, 
+    MatrixExpression< const T, const VectorExpression< const T, const L1, const R1, O1, COL >, 
             const VectorExpression< const T, const L2, const R2, O2, ROW >, 
             V_OUTER >
     operator*( const VectorExpression< const T, const L1, const R1, O1, COL >& x, 
             const VectorExpression< const T, const L2, const R2, O2, ROW >& y ) {
-        return MatrixExpression< const VectorExpression< const T, const L1, 
+        return MatrixExpression< const T, const VectorExpression< const T, const L1, 
                 const R1, O1, COL >, 
             const VectorExpression< const T, const L2, const R2, O2, ROW >, 
             V_OUTER >( x, y );
@@ -1550,26 +1609,26 @@ namespace xmagma{
     /* OpExecutor for Matrix */
     // A = trans( expression )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
-            const MatrixExpression< const L, const R, O >, 
-            const MatrixExpression< const L, const R, O >, M_TRANS > > {
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
+            const MatrixExpression< const T, const L, const R, O >, 
+            const MatrixExpression< const T, const L, const R, O >, M_TRANS > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >, 
-        const MatrixExpression< const L, const R, O >, M_TRANS >& rhs ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >, 
+        const MatrixExpression< const T, const L, const R, O >, M_TRANS >& rhs ) {
             Matrix< T > temp( rhs.rhs());
             lhs = t( temp );
         }
     };
     // A = inv( expression )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
-            const MatrixExpression< const L, const R, O >, 
-            const MatrixExpression< const L, const R, O >, M_INV > > {
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
+            const MatrixExpression< const T, const L, const R, O >, 
+            const MatrixExpression< const T, const L, const R, O >, M_INV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >, 
-        const MatrixExpression< const L, const R, O >, M_INV >& rhs ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >, 
+        const MatrixExpression< const T, const L, const R, O >, M_INV >& rhs ) {
             Matrix< T > temp( rhs.rhs() );
             lhs = solve( temp );
         }
@@ -1584,10 +1643,10 @@ namespace xmagma{
     };
     // A = B ( expr ) + C ( expr )
     template< typename T, typename L, typename R >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const L, 
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T, const L, 
             const R, M_ADD > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const L, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const L, 
             const R, M_ADD >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy.lhs() );
@@ -1604,10 +1663,10 @@ namespace xmagma{
     // A += trans( B )
     template< typename T >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, 
-            MatrixExpression< const Matrix< T >, 
+            MatrixExpression< const T, const Matrix< T >, 
                                          const Matrix< T >, M_TRANS > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
                 const Matrix< T >,
                 const Matrix< T >, M_TRANS >& rhs ) {
             Matrix< T > temp( t( rhs.rhs() ) );
@@ -1618,10 +1677,10 @@ namespace xmagma{
     // A += inv( B )
     template< typename T >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, 
-            MatrixExpression< const Matrix< T >, 
+            MatrixExpression< const T, const Matrix< T >, 
                                          const Matrix< T >, M_INV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
                 const Matrix< T >,
                 const Matrix< T >, M_INV >& rhs ) {
             Matrix< T > temp( solve( rhs.rhs() ) );
@@ -1631,13 +1690,13 @@ namespace xmagma{
     };
     // A += trans( expression( B ) )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
-    const MatrixExpression< const L, const R, O >, const MatrixExpression<
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T,
+    const MatrixExpression< const T, const L, const R, O >, const MatrixExpression< const T,
     const L, const R, O >, M_TRANS > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >,
-        const MatrixExpression< const L, const R, O >, M_TRANS >& rhs ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >,
+        const MatrixExpression< const T, const L, const R, O >, M_TRANS >& rhs ) {
             Matrix< T > temp1( rhs.rhs());
             Matrix< T > temp2( temp1.size2(), temp1.size1() );
             trans( temp1, temp2 );
@@ -1646,13 +1705,13 @@ namespace xmagma{
     };
     // A += inv( expression( B ) )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
-    const MatrixExpression< const L, const R, O >, const MatrixExpression<
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T,
+    const MatrixExpression< const T, const L, const R, O >, const MatrixExpression< const T,
     const L, const R, O >, M_INV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >,
-        const MatrixExpression< const L, const R, O >, M_INV >& rhs ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >,
+        const MatrixExpression< const T, const L, const R, O >, M_INV >& rhs ) {
             Matrix< T > temp( rhs.rhs());
             inv( temp );
             lhs += temp;
@@ -1668,10 +1727,10 @@ namespace xmagma{
     };
     // A -= trans( B )
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, 
     const Matrix< T >, const Matrix< T >, M_TRANS > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, 
         const Matrix< T >, const Matrix< T >, M_TRANS >& rhs ) {
             Matrix< T > temp( rhs );
             lhs -= temp;
@@ -1680,10 +1739,10 @@ namespace xmagma{
     // A -= inv( B )
     template< typename T >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB, 
-            MatrixExpression< const Matrix< T >, 
+            MatrixExpression< const T, const Matrix< T >, 
                                          const Matrix< T >, M_INV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
                 const Matrix< T >,
                 const Matrix< T >, M_INV >& rhs ) {
             Matrix< T > temp( solve( rhs.rhs() ) );
@@ -1694,12 +1753,12 @@ namespace xmagma{
     // A -= trans( expression( B ) )
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const L, const R, O >,
-            const MatrixExpression< const L, const R, O >, M_TRANS > > {
+            MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
+            const MatrixExpression< const T, const L, const R, O >, M_TRANS > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< 
-            const MatrixExpression< const L, const R, O >,
-            const MatrixExpression< const L, const R, O >, M_TRANS >& rhs ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, 
+            const MatrixExpression< const T, const L, const R, O >,
+            const MatrixExpression< const T, const L, const R, O >, M_TRANS >& rhs ) {
             Matrix< T > temp1( rhs.rhs());
             Matrix< T > temp2( temp1.size2(), temp1.size1() );
             trans( temp1, temp2 );
@@ -1708,13 +1767,13 @@ namespace xmagma{
     };
     // A -= inv( expression( B ) )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression<
-    const MatrixExpression< const L, const R, O >, const MatrixExpression<
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T,
+    const MatrixExpression< const T, const L, const R, O >, const MatrixExpression< const T,
     const L, const R, O >, M_INV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >,
-        const MatrixExpression< const L, const R, O >, M_INV >& rhs ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >,
+        const MatrixExpression< const T, const L, const R, O >, M_INV >& rhs ) {
             Matrix< T > temp( rhs.rhs() );
             inv( temp );
             lhs -= temp;
@@ -1723,61 +1782,61 @@ namespace xmagma{
     /*                        A Oper B * a                         */
     // A += B * alpha
     template< typename T, typename S >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< 
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, 
     const Matrix< T >, const S, M_SCALE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
             Matrix< T >, const S, M_SCALE >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  T( proxy.rhs() ) );
         }
     };
     // A += - B  
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< 
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, 
     const Matrix< T >, const Matrix< T >, M_NEGATIVE> > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
             Matrix< T >, const Matrix< T >, M_NEGATIVE>& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  T( - 1 )  );
         }
     };
     // A -= B * alpha
     template< typename T, typename S >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, 
     const Matrix< T >, const S, M_SCALE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
             Matrix< T >, const S, M_SCALE >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  - T( proxy.rhs() ) );
         }
     };
     // A -= - B 
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, 
     const Matrix< T >, const Matrix< T >, M_NEGATIVE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
             Matrix< T >, const Matrix< T >, M_NEGATIVE>& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  T( 1 ) );
         }
     };
     // A = B * a
     template< typename T, typename S >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
     const Matrix< T >, const S, M_SCALE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, 
         const Matrix< T >, const S, M_SCALE >& proxy ) {
             inplace_add2( lhs, proxy.lhs(),  T( proxy.rhs() ) );
         }
     };
     // A = expression( B ) * a
     template< typename T, typename L, typename R, Oper O, typename S >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, const S, M_SCALE > > {
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, const S, M_SCALE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-         const MatrixExpression< const L,
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+         const MatrixExpression< const T, const L,
                 const R, O >, const S, M_SCALE >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             lhs = temp * proxy.rhs();
@@ -1786,63 +1845,63 @@ namespace xmagma{
     /*                        A Oper B / a                         */
     // A += B / alpha
     template< typename T, typename S >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< 
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, 
     const Matrix< T >, const S, M_DIV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
             Matrix< T >, const S, M_DIV >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  1 / T( proxy.rhs() ) );
         }
     };
     // A += expression( B ) / alpha
     template< typename T, typename S, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, const S, M_DIV > > {
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, const S, M_DIV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
-            MatrixExpression< const L, const R, O >, const S, M_DIV >& proxy ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
+            MatrixExpression< const T, const L, const R, O >, const S, M_DIV >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             lhs += temp / T( proxy.rhs() );
         }
     };
     // A -= B / alpha
     template< typename T, typename S >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, 
     const Matrix< T >, const S, M_DIV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
             Matrix< T >, const S, M_DIV >& proxy ) {
                 inplace_add( lhs, proxy.lhs(),  - 1 / T ( proxy.rhs() ) );
         }
     };
     // A -= expression( B ) / alpha
     template< typename T, typename S, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, const S, M_DIV > > {
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, const S, M_DIV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const 
-            MatrixExpression< const L, const R, O >, const S, M_DIV >& proxy ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const 
+            MatrixExpression< const T, const L, const R, O >, const S, M_DIV >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             lhs -= temp / T( proxy.rhs() );
         }
     };
     // A = B / a
     template< typename T, typename S >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
     const Matrix< T >, const S, M_DIV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, 
         const Matrix< T >, const S, M_DIV >& proxy ) {
             inplace_add2( lhs, proxy.lhs(),  1 / T( proxy.rhs() ) );
         }
     };
     // A = expression( B ) / a
     template< typename T, typename L, typename R, Oper O, typename S >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, const S, M_DIV > > {
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, const S, M_DIV > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-         const MatrixExpression< const L,
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+         const MatrixExpression< const T, const L,
                 const R, O >, const S, M_DIV >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             lhs = temp * ( 1 / T ( proxy.rhs() ) );
@@ -1850,23 +1909,23 @@ namespace xmagma{
     };
     // A = - B
     template< typename T >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
     const Matrix< T >, const Matrix< T >, M_NEGATIVE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, 
         const Matrix< T >, const Matrix< T >, M_NEGATIVE >& proxy ) {
             lhs = - 1 * proxy.lhs();
         }
     };
     // A = - expression( B )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, 
-            const MatrixExpression< const L, const R, O >, M_NEGATIVE > > {
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, 
+            const MatrixExpression< const T, const L, const R, O >, M_NEGATIVE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-         const MatrixExpression< const L,
-                const R, O >, const MatrixExpression< const L,
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+         const MatrixExpression< const T, const L,
+                const R, O >, const MatrixExpression< const T, const L,
                 const R, O >, M_NEGATIVE >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             lhs = - 1 * temp;
@@ -1874,58 +1933,58 @@ namespace xmagma{
     };
     // A += expression( B ) * a
     template< typename T, typename L, typename R, Oper O, typename S >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, const S, M_SCALE > > {
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, const S, M_SCALE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >, const S, M_SCALE >& proxy  ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >, const S, M_SCALE >& proxy  ) {
             Matrix< T > temp( proxy.lhs() );
             lhs += temp * proxy.rhs();
         }
     };
     // A -= expression( B ) * a
     template< typename T, typename L, typename R, Oper O, typename S >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, const S, M_SCALE > > {
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, const S, M_SCALE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >, const S, M_SCALE >& proxy  ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >, const S, M_SCALE >& proxy  ) {
             Matrix< T > temp( proxy.lhs() );
             lhs -= temp * proxy.rhs();
         }
     };
     // A += - expression( B )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, 
-    const MatrixExpression< const L, const R, O >, M_NEGATIVE > > {
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, 
+    const MatrixExpression< const T, const L, const R, O >, M_NEGATIVE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >, 
-        const MatrixExpression< const L, const R, O >, M_NEGATIVE >& proxy  ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >, 
+        const MatrixExpression< const T, const L, const R, O >, M_NEGATIVE >& proxy  ) {
             Matrix< T > temp( proxy.lhs() );
             lhs += temp * (  - 1 );
         }
     };
     // A -= - expression( B )
     template< typename T, typename L, typename R, Oper O >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< 
-    const MatrixExpression< const L, const R, O >, 
-    const MatrixExpression< const L, const R, O >, M_NEGATIVE > > {
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, 
+    const MatrixExpression< const T, const L, const R, O >, 
+    const MatrixExpression< const T, const L, const R, O >, M_NEGATIVE > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-        const MatrixExpression< const L, const R, O >, 
-        const MatrixExpression< const L, const R, O >, M_NEGATIVE >& proxy  ) {
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+        const MatrixExpression< const T, const L, const R, O >, 
+        const MatrixExpression< const T, const L, const R, O >, M_NEGATIVE >& proxy  ) {
             Matrix< T > temp( proxy.lhs() );
             lhs -= temp * (  - 1 );
         }
     };
     // A += expression( B ) + expression( C )
     template< typename T, typename L, typename R >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const L, 
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, const L, 
             const R, M_ADD > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const L, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const L, 
             const R, M_ADD >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy.lhs() );
@@ -1941,10 +2000,10 @@ namespace xmagma{
     };
     // A -= expression( B ) + expression( C )
     template< typename T, typename L, typename R >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const L, 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, const L, 
             const R, M_ADD > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const L, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const L, 
             const R, M_ADD >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy.lhs() );
@@ -1960,10 +2019,10 @@ namespace xmagma{
     };
     // A = expression( B ) - expression( C )
     template< typename T, typename L, typename R >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const L, 
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T, const L, 
             const R, M_SUB > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const L, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const L, 
             const R, M_SUB >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy.lhs() );
@@ -1979,10 +2038,10 @@ namespace xmagma{
     };
     // A += expression( B ) - expression( C )
     template< typename T, typename L, typename R >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const L, 
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T, const L, 
             const R, M_SUB > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const L, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const L, 
             const R, M_SUB >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy.lhs() );
@@ -1998,10 +2057,10 @@ namespace xmagma{
     };
     // A -= expression( B ) - expression( C )
     template< typename T, typename L, typename R >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const L, 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T, const L, 
             const R, M_SUB > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression< const L, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T, const L, 
             const R, M_SUB >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy.lhs() );
@@ -2018,10 +2077,10 @@ namespace xmagma{
     /* Matrix - Matrix products */
     // C = A * B
     template< typename T >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
     const Matrix< T >, const Matrix< T >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
         const Matrix< T >, const Matrix< T >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2033,12 +2092,12 @@ namespace xmagma{
     };
     // C = A * t( B )
     template< typename T >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
-    const Matrix< T >, const MatrixExpression< const Matrix< T >, 
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
+    const Matrix< T >, const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const Matrix< T >, const MatrixExpression< const Matrix< T >, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const Matrix< T >, const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2052,13 +2111,13 @@ namespace xmagma{
     // C = A * expression( B )
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,  
-            MatrixExpression< const Matrix< T >, 
-            const MatrixExpression< const L, const R, O >,
+            MatrixExpression< const T, const Matrix< T >, 
+            const MatrixExpression< const T, const L, const R, O >,
             M_MULT > > {
     public:
         static void apply( Matrix< T >& lhs,
-                 const MatrixExpression< const Matrix< T >, 
-            const MatrixExpression< const L, const R, O >,
+                 const MatrixExpression< const T, const Matrix< T >, 
+            const MatrixExpression< const T, const L, const R, O >,
             M_MULT >& proxy ) {
             Matrix< T > temp( proxy.rhs() );
             m_mult( proxy.lhs(), temp, lhs, MagmaNoTrans, MagmaNoTrans );
@@ -2066,13 +2125,13 @@ namespace xmagma{
     };
     // C = t( A ) * B
     template< typename T >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
-    const MatrixExpression< const Matrix< T >, 
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >,
     const Matrix< T >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const MatrixExpression< const Matrix< T >, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >,
     const Matrix< T >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
@@ -2087,11 +2146,11 @@ namespace xmagma{
     // C = expression( A ) * B
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,  
-            MatrixExpression< const MatrixExpression< const L, const R, O >,
+            MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const Matrix< T >, M_MULT > > {
     public:
         static void apply( Matrix< T >& lhs,
-                 const MatrixExpression< const MatrixExpression< const L, const R, O >,
+                 const MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const Matrix< T >, M_MULT >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             m_mult( temp, proxy.rhs(), lhs, MagmaNoTrans, MagmaNoTrans );
@@ -2099,14 +2158,14 @@ namespace xmagma{
     };
     // C = t( A ) * t( B )
     template< typename T >
-    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression<
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
+    class OpExecutor< Matrix< T >, M_ASSIGN, MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
     M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
     M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2122,14 +2181,14 @@ namespace xmagma{
             typename RL, typename RR, Oper RO >
     class OpExecutor< Matrix< T >, 
             M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const LL, const LR, LO >,
-            const MatrixExpression< const RL, const RR, RO >,
+            MatrixExpression< const T, const MatrixExpression< const T, const LL, const LR, LO >,
+            const MatrixExpression< const T, const RL, const RR, RO >,
             M_MULT > > {
     public: 
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                const MatrixExpression< const LL, const LR, LO >,
-                const MatrixExpression< const RL, const RR, RO >, M_MULT >& 
+                const MatrixExpression< const T, 
+                const MatrixExpression< const T, const LL, const LR, LO >,
+                const MatrixExpression< const T, const RL, const RR, RO >, M_MULT >& 
             proxy ) {
             Matrix< T > temp1( proxy.lhs() );
             Matrix< T > temp2( proxy.rhs() );
@@ -2138,10 +2197,10 @@ namespace xmagma{
     };
     // C += A * B
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T,
     const Matrix< T >, const Matrix< T >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
         const Matrix< T >, const Matrix< T >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2154,12 +2213,12 @@ namespace xmagma{
     };
     // C += A * t( B )
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
-    const Matrix< T >, const MatrixExpression< const Matrix< T >, 
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T,
+    const Matrix< T >, const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const Matrix< T >, const MatrixExpression< const Matrix< T >, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const Matrix< T >, const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2173,13 +2232,13 @@ namespace xmagma{
     // C += A * expression( B )
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,  
-            MatrixExpression< const Matrix< T >, 
-            const MatrixExpression< const L, const R, O >,
+            MatrixExpression< const T, const Matrix< T >, 
+            const MatrixExpression< const T, const L, const R, O >,
             M_MULT > > {
     public:
         static void apply( Matrix< T >& lhs,
-                 const MatrixExpression< const Matrix< T >, 
-            const MatrixExpression< const L, const R, O >,
+                 const MatrixExpression< const T, const Matrix< T >, 
+            const MatrixExpression< const T, const L, const R, O >,
             M_MULT >& proxy ) {
             Matrix< T > temp( proxy.rhs() );
             m_mult( proxy.lhs(), temp, lhs, MagmaNoTrans, MagmaNoTrans, 
@@ -2188,13 +2247,13 @@ namespace xmagma{
     };
     // C += t( A ) * B
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
-    const MatrixExpression< const Matrix< T >, 
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >,
     const Matrix< T >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const MatrixExpression< const Matrix< T >, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >,
     const Matrix< T >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
@@ -2209,11 +2268,11 @@ namespace xmagma{
     // C += expression( A ) * B
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,  
-            MatrixExpression< const MatrixExpression< const L, const R, O >,
+            MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const Matrix< T >, M_MULT > > {
     public:
         static void apply( Matrix< T >& lhs,
-                 const MatrixExpression< const MatrixExpression< const L, const R, O >,
+                 const MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const Matrix< T >, M_MULT >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             m_mult( temp, proxy.rhs(), lhs, MagmaNoTrans, MagmaNoTrans, 
@@ -2222,14 +2281,14 @@ namespace xmagma{
     };
     // C += t( A ) * t( B )
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression<
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
+    class OpExecutor< Matrix< T >, M_INPLACE_ADD, MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
     M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
     M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2246,14 +2305,14 @@ namespace xmagma{
             typename RL, typename RR, Oper RO >
     class OpExecutor< Matrix< T >, 
             M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const LL, const LR, LO >,
-            const MatrixExpression< const RL, const RR, RO >,
+            MatrixExpression< const T, const MatrixExpression< const T, const LL, const LR, LO >,
+            const MatrixExpression< const T, const RL, const RR, RO >,
             M_MULT > > {
     public: 
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                const MatrixExpression< const LL, const LR, LO >,
-                const MatrixExpression< const RL, const RR, RO >, M_MULT >& 
+                const MatrixExpression< const T, 
+                const MatrixExpression< const T, const LL, const LR, LO >,
+                const MatrixExpression< const T, const RL, const RR, RO >, M_MULT >& 
             proxy ) {
             Matrix< T > temp1( proxy.lhs() );
             Matrix< T > temp2( proxy.rhs() );
@@ -2263,10 +2322,10 @@ namespace xmagma{
     };
     // C -= A * B
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression<
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T,
     const Matrix< T >, const Matrix< T >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
         const Matrix< T >, const Matrix< T >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2279,12 +2338,12 @@ namespace xmagma{
     };
     // C -= A * t( B )
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression<
-    const Matrix< T >, const MatrixExpression< const Matrix< T >, 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T,
+    const Matrix< T >, const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const Matrix< T >, const MatrixExpression< const Matrix< T >, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const Matrix< T >, const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2298,13 +2357,13 @@ namespace xmagma{
     // C -= A * expression( B )
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,  
-            MatrixExpression< const Matrix< T >, 
-            const MatrixExpression< const L, const R, O >,
+            MatrixExpression< const T, const Matrix< T >, 
+            const MatrixExpression< const T, const L, const R, O >,
             M_MULT > > {
     public:
         static void apply( Matrix< T >& lhs,
-                 const MatrixExpression< const Matrix< T >, 
-            const MatrixExpression< const L, const R, O >,
+                 const MatrixExpression< const T, const Matrix< T >, 
+            const MatrixExpression< const T, const L, const R, O >,
             M_MULT >& proxy ) {
             Matrix< T > temp( proxy.rhs() );
             m_mult( proxy.lhs(), temp, lhs, MagmaNoTrans, MagmaNoTrans, 
@@ -2313,13 +2372,13 @@ namespace xmagma{
     };
     // C -= t( A ) * B
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression<
-    const MatrixExpression< const Matrix< T >, 
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >,
     const Matrix< T >, M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const MatrixExpression< const Matrix< T >, 
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, 
             const Matrix< T >, M_TRANS >,
     const Matrix< T >, M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
@@ -2334,11 +2393,11 @@ namespace xmagma{
     // C -= expression( A ) * B
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,  
-            MatrixExpression< const MatrixExpression< const L, const R, O >,
+            MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const Matrix< T >, M_MULT > > {
     public:
         static void apply( Matrix< T >& lhs,
-                 const MatrixExpression< const MatrixExpression< const L, const R, O >,
+                 const MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
             const Matrix< T >, M_MULT >& proxy ) {
             Matrix< T > temp( proxy.lhs() );
             m_mult( temp, proxy.rhs(), lhs, MagmaNoTrans, MagmaNoTrans, 
@@ -2347,14 +2406,14 @@ namespace xmagma{
     };
     // C -= t( A ) * t( B )
     template< typename T >
-    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression<
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
+    class OpExecutor< Matrix< T >, M_INPLACE_SUB, MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
     M_MULT > > {
     public:
-        static void apply( Matrix< T >& lhs, const MatrixExpression<
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
-    const MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS >,
+        static void apply( Matrix< T >& lhs, const MatrixExpression< const T,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
+    const MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS >,
     M_MULT >& proxy ) {
             if( aliasing( lhs, proxy ) ) {
                 Matrix< T > temp( proxy );
@@ -2371,14 +2430,14 @@ namespace xmagma{
             typename RL, typename RR, Oper RO >
     class OpExecutor< Matrix< T >, 
             M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const LL, const LR, LO >,
-            const MatrixExpression< const RL, const RR, RO >,
+            MatrixExpression< const T, const MatrixExpression< const T, const LL, const LR, LO >,
+            const MatrixExpression< const T, const RL, const RR, RO >,
             M_MULT > > {
     public: 
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                const MatrixExpression< const LL, const LR, LO >,
-                const MatrixExpression< const RL, const RR, RO >, M_MULT >& 
+                const MatrixExpression< const T, 
+                const MatrixExpression< const T, const LL, const LR, LO >,
+                const MatrixExpression< const T, const RL, const RR, RO >, M_MULT >& 
             proxy ) {
             Matrix< T > temp1( proxy.lhs() );
             Matrix< T > temp2( proxy.rhs() );
@@ -2424,12 +2483,12 @@ namespace xmagma{
     // y = t( A ) * x
     template< typename T >
     class OpExecutor< Vector< T, COL >, V_ASSIGN, 
-            VectorExpression< const T, const MatrixExpression< 
+            VectorExpression< const T, const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >, 
                 const Vector< T, COL >, MV_MULT, COL > > {
     public:
         static void apply( Vector< T, COL >& lhs, 
-                const VectorExpression< const T, const MatrixExpression< 
+                const VectorExpression< const T, const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >, 
                 const Vector< T, COL >, MV_MULT, COL >& rhs ) {
             if( aliasing( lhs, rhs.rhs() ) ) {
@@ -2444,13 +2503,13 @@ namespace xmagma{
     template< typename T >
     class OpExecutor< Vector< T, ROW >, V_ASSIGN, 
             VectorExpression< const T, const Vector< T, ROW >,
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >,
                 VM_MULT, ROW > > {
     public:
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T, const Vector< T, ROW >,
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >,
                 VM_MULT, ROW >& rhs ) {
             if( aliasing( lhs, rhs.lhs() ) ) {
@@ -2466,7 +2525,7 @@ namespace xmagma{
     class OpExecutor< Vector< T, COL >,
             V_ASSIGN, 
             VectorExpression< const T, 
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 const Vector< T, COL >,
                 MV_MULT, 
                 COL >
@@ -2474,7 +2533,7 @@ namespace xmagma{
     public:
         static void apply( Vector< T, COL >& lhs,
                 const VectorExpression< const T, 
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 const Vector< T, COL >,
                 MV_MULT, 
                 COL >& rhs ) {
@@ -2488,7 +2547,7 @@ namespace xmagma{
             V_ASSIGN, 
             VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 VM_MULT, 
                 ROW >
            > {
@@ -2496,7 +2555,7 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs,
                 const VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 VM_MULT, 
                 ROW >& rhs ) {
             Matrix< T > temp( rhs.rhs() );
@@ -2508,9 +2567,9 @@ namespace xmagma{
     class OpExecutor< Vector< T, COL >,
             V_ASSIGN, 
             VectorExpression< const T, 
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 const Vector< T, COL >,
                 MV_MULT, 
@@ -2519,9 +2578,9 @@ namespace xmagma{
     public:
         static void apply( Vector< T, COL >& lhs,
                 const VectorExpression< const T, 
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 const Vector< T, COL >,
                 MV_MULT, 
@@ -2536,9 +2595,9 @@ namespace xmagma{
             V_ASSIGN, 
             VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 VM_MULT, 
                 ROW >
@@ -2547,9 +2606,9 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs,
                 const VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 VM_MULT, 
                 ROW >& rhs ) {
@@ -2591,14 +2650,14 @@ namespace xmagma{
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Vector< T, COL >, V_ASSIGN, 
             VectorExpression< const T, 
-                const MatrixExpression< const Matrix< T >, 
+                const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, 
                 const VectorExpression< const T, const L, const R, O, COL >,
                 MV_MULT, COL > > {
     public:
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T, 
-                const MatrixExpression< const Matrix< T >, 
+                const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, 
                     const VectorExpression< const T, const L, 
                         const R, O, COL >, MV_MULT, COL >& rhs ) {
@@ -2611,13 +2670,13 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_ASSIGN, 
             VectorExpression< const T, 
                 const VectorExpression< const T, const L, const R, O, ROW >,
-            const MatrixExpression< const Matrix< T >, 
+            const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, VM_MULT, ROW > > {
     public:
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T, 
                 const VectorExpression< const T, const L, const R, O, ROW >,
-            const MatrixExpression< const Matrix< T >, 
+            const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, VM_MULT, ROW >& rhs ) {
             Vector< T, ROW > temp( rhs.lhs() );
             mv_mult( rhs.rhs().rhs(), temp, lhs, MagmaNoTrans, 1, 0 );
@@ -2628,14 +2687,14 @@ namespace xmagma{
             typename L2, typename R2, Oper O2 >
     class OpExecutor< Vector< T, COL >, V_ASSIGN,
             VectorExpression< const T,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL > 
         > {
     public: 
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T, 
-                    const MatrixExpression< const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL >& rhs ) {
             Matrix< T > m( rhs.lhs() );
@@ -2649,14 +2708,14 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_ASSIGN,
             VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 VM_MULT, ROW > 
         > {
     public: 
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 VM_MULT, ROW >& rhs ) {
             Matrix< T > m( rhs.rhs() );
             Vector< T, ROW > v( rhs.lhs() );
@@ -2668,9 +2727,9 @@ namespace xmagma{
             typename L2, typename R2, Oper O2 >
     class OpExecutor< Vector< T, COL >, V_ASSIGN,
             VectorExpression< const T,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL > 
@@ -2678,9 +2737,9 @@ namespace xmagma{
     public: 
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL >& rhs ) {
@@ -2695,9 +2754,9 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_ASSIGN,
             VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 VM_MULT, ROW > 
         > {
@@ -2705,9 +2764,9 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 VM_MULT, ROW >& rhs ) {
             Matrix< T > m( rhs.rhs().rhs() );
@@ -2752,12 +2811,12 @@ namespace xmagma{
     // y += t( A ) * x
     template< typename T >
     class OpExecutor< Vector< T, COL >, V_INPLACE_ADD, 
-            VectorExpression< const T, const MatrixExpression< 
+            VectorExpression< const T, const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >, 
                 const Vector< T, COL >, MV_MULT, COL > > {
     public:
         static void apply( Vector< T, COL >& lhs, 
-                const VectorExpression< const T, const MatrixExpression< 
+                const VectorExpression< const T, const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >, 
                 const Vector< T, COL >, MV_MULT, COL >& rhs ) {
             if( aliasing( lhs, rhs.rhs() ) ) {
@@ -2772,13 +2831,13 @@ namespace xmagma{
     template< typename T >
     class OpExecutor< Vector< T, ROW >, V_INPLACE_ADD, 
             VectorExpression< const T, const Vector< T, ROW >,
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >,
                 VM_MULT, ROW > > {
     public:
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T, const Vector< T, ROW >,
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >,
                 VM_MULT, ROW >& rhs ) {
             if( aliasing( lhs, rhs.lhs() ) ) {
@@ -2794,7 +2853,7 @@ namespace xmagma{
     class OpExecutor< Vector< T, COL >,
             V_INPLACE_ADD, 
             VectorExpression< const T, 
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 const Vector< T, COL >,
                 MV_MULT, 
                 COL >
@@ -2802,7 +2861,7 @@ namespace xmagma{
     public:
         static void apply( Vector< T, COL >& lhs,
                 const VectorExpression< const T, 
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 const Vector< T, COL >,
                 MV_MULT, 
                 COL >& rhs ) {
@@ -2816,7 +2875,7 @@ namespace xmagma{
             V_INPLACE_ADD, 
             VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 VM_MULT, 
                 ROW >
            > {
@@ -2824,7 +2883,7 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs,
                 const VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 VM_MULT, 
                 ROW >& rhs ) {
             Matrix< T > temp( rhs.rhs() );
@@ -2836,9 +2895,9 @@ namespace xmagma{
     class OpExecutor< Vector< T, COL >,
             V_INPLACE_ADD, 
             VectorExpression< const T, 
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 const Vector< T, COL >,
                 MV_MULT, 
@@ -2847,9 +2906,9 @@ namespace xmagma{
     public:
         static void apply( Vector< T, COL >& lhs,
                 const VectorExpression< const T, 
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 const Vector< T, COL >,
                 MV_MULT, 
@@ -2864,9 +2923,9 @@ namespace xmagma{
             V_INPLACE_ADD, 
             VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 VM_MULT, 
                 ROW >
@@ -2875,9 +2934,9 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs,
                 const VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 VM_MULT, 
                 ROW >& rhs ) {
@@ -2919,14 +2978,14 @@ namespace xmagma{
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Vector< T, COL >, V_INPLACE_ADD, 
             VectorExpression< const T, 
-                const MatrixExpression< const Matrix< T >, 
+                const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, 
                 const VectorExpression< const T, const L, const R, O, COL >,
                 MV_MULT, COL > > {
     public:
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T, 
-                const MatrixExpression< const Matrix< T >, 
+                const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, 
                     const VectorExpression< const T, const L, 
                         const R, O, COL >, MV_MULT, COL >& rhs ) {
@@ -2939,13 +2998,13 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_INPLACE_ADD, 
             VectorExpression< const T, 
                 const VectorExpression< const T, const L, const R, O, ROW >,
-            const MatrixExpression< const Matrix< T >, 
+            const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, VM_MULT, ROW > > {
     public:
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T, 
                 const VectorExpression< const T, const L, const R, O, ROW >,
-            const MatrixExpression< const Matrix< T >, 
+            const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, VM_MULT, ROW >& rhs ) {
             Vector< T, ROW > temp( rhs.lhs() );
             mv_mult( rhs.rhs().rhs(), temp, lhs, MagmaNoTrans, 1, 1 );
@@ -2956,14 +3015,14 @@ namespace xmagma{
             typename L2, typename R2, Oper O2 >
     class OpExecutor< Vector< T, COL >, V_INPLACE_ADD,
             VectorExpression< const T,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL > 
         > {
     public: 
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T, 
-                    const MatrixExpression< const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL >& rhs ) {
             Matrix< T > m( rhs.lhs() );
@@ -2977,14 +3036,14 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_INPLACE_ADD,
             VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 VM_MULT, ROW > 
         > {
     public: 
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 VM_MULT, ROW >& rhs ) {
             Matrix< T > m( rhs.rhs() );
             Vector< T, ROW > v( rhs.lhs() );
@@ -2996,9 +3055,9 @@ namespace xmagma{
             typename L2, typename R2, Oper O2 >
     class OpExecutor< Vector< T, COL >, V_INPLACE_ADD,
             VectorExpression< const T,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL > 
@@ -3006,9 +3065,9 @@ namespace xmagma{
     public: 
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL >& rhs ) {
@@ -3023,9 +3082,9 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_INPLACE_ADD,
             VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 VM_MULT, ROW > 
         > {
@@ -3033,9 +3092,9 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 VM_MULT, ROW >& rhs ) {
             Matrix< T > m( rhs.rhs().rhs() );
@@ -3081,12 +3140,12 @@ namespace xmagma{
     // y -= t( A ) * x
     template< typename T >
     class OpExecutor< Vector< T, COL >, V_INPLACE_SUB, 
-            VectorExpression< const T, const MatrixExpression< 
+            VectorExpression< const T, const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >, 
                 const Vector< T, COL >, MV_MULT, COL > > {
     public:
         static void apply( Vector< T, COL >& lhs, 
-                const VectorExpression< const T, const MatrixExpression< 
+                const VectorExpression< const T, const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >, 
                 const Vector< T, COL >, MV_MULT, COL >& rhs ) {
             if( aliasing( lhs, rhs.rhs() ) ) {
@@ -3101,13 +3160,13 @@ namespace xmagma{
     template< typename T >
     class OpExecutor< Vector< T, ROW >, V_INPLACE_SUB, 
             VectorExpression< const T, const Vector< T, ROW >,
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >,
                 VM_MULT, ROW > > {
     public:
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T, const Vector< T, ROW >,
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                 const Matrix< T >, const Matrix< T >, M_TRANS >,
                 VM_MULT, ROW >& rhs ) {
             if( aliasing( lhs, rhs.lhs() ) ) {
@@ -3123,7 +3182,7 @@ namespace xmagma{
     class OpExecutor< Vector< T, COL >,
             V_INPLACE_SUB, 
             VectorExpression< const T, 
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 const Vector< T, COL >,
                 MV_MULT, 
                 COL >
@@ -3131,7 +3190,7 @@ namespace xmagma{
     public:
         static void apply( Vector< T, COL >& lhs,
                 const VectorExpression< const T, 
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 const Vector< T, COL >,
                 MV_MULT, 
                 COL >& rhs ) {
@@ -3145,7 +3204,7 @@ namespace xmagma{
             V_INPLACE_SUB, 
             VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 VM_MULT, 
                 ROW >
            > {
@@ -3153,7 +3212,7 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs,
                 const VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, const L, const R, O >,
                 VM_MULT, 
                 ROW >& rhs ) {
             Matrix< T > temp( rhs.rhs() );
@@ -3165,9 +3224,9 @@ namespace xmagma{
     class OpExecutor< Vector< T, COL >,
             V_INPLACE_SUB, 
             VectorExpression< const T, 
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 const Vector< T, COL >,
                 MV_MULT, 
@@ -3176,9 +3235,9 @@ namespace xmagma{
     public:
         static void apply( Vector< T, COL >& lhs,
                 const VectorExpression< const T, 
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 const Vector< T, COL >,
                 MV_MULT, 
@@ -3193,9 +3252,9 @@ namespace xmagma{
             V_INPLACE_SUB, 
             VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 VM_MULT, 
                 ROW >
@@ -3204,9 +3263,9 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs,
                 const VectorExpression< const T, 
                 const Vector< T, ROW >,
-                const MatrixExpression< 
-                    const MatrixExpression< const L, const R, O >,
-                    const MatrixExpression< const L, const R, O >,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const L, const R, O >,
+                    const MatrixExpression< const T, const L, const R, O >,
                     M_TRANS >,
                 VM_MULT, 
                 ROW >& rhs ) {
@@ -3248,14 +3307,14 @@ namespace xmagma{
     template< typename T, typename L, typename R, Oper O >
     class OpExecutor< Vector< T, COL >, V_INPLACE_SUB, 
             VectorExpression< const T, 
-                const MatrixExpression< const Matrix< T >, 
+                const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, 
                 const VectorExpression< const T, const L, const R, O, COL >,
                 MV_MULT, COL > > {
     public:
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T, 
-                const MatrixExpression< const Matrix< T >, 
+                const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, 
                     const VectorExpression< const T, const L, 
                         const R, O, COL >, MV_MULT, COL >& rhs ) {
@@ -3268,13 +3327,13 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_INPLACE_SUB, 
             VectorExpression< const T, 
                 const VectorExpression< const T, const L, const R, O, ROW >,
-            const MatrixExpression< const Matrix< T >, 
+            const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, VM_MULT, ROW > > {
     public:
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T, 
                 const VectorExpression< const T, const L, const R, O, ROW >,
-            const MatrixExpression< const Matrix< T >, 
+            const MatrixExpression< const T, const Matrix< T >, 
                     const Matrix< T >, M_TRANS >, VM_MULT, ROW >& rhs ) {
             Vector< T, ROW > temp( rhs.lhs() );
             mv_mult( rhs.rhs().rhs(), temp, lhs, MagmaNoTrans, -1, 1 );
@@ -3285,14 +3344,14 @@ namespace xmagma{
             typename L2, typename R2, Oper O2 >
     class OpExecutor< Vector< T, COL >, V_INPLACE_SUB,
             VectorExpression< const T,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL > 
         > {
     public: 
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T, 
-                    const MatrixExpression< const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL >& rhs ) {
             Matrix< T > m( rhs.lhs() );
@@ -3306,14 +3365,14 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_INPLACE_SUB,
             VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 VM_MULT, ROW > 
         > {
     public: 
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T, const L1, const R1, O1 >,
                 VM_MULT, ROW >& rhs ) {
             Matrix< T > m( rhs.rhs() );
             Vector< T, ROW > v( rhs.lhs() );
@@ -3325,9 +3384,9 @@ namespace xmagma{
             typename L2, typename R2, Oper O2 >
     class OpExecutor< Vector< T, COL >, V_INPLACE_SUB,
             VectorExpression< const T,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL > 
@@ -3335,9 +3394,9 @@ namespace xmagma{
     public: 
         static void apply( Vector< T, COL >& lhs, 
                 const VectorExpression< const T,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 const VectorExpression< const T, const L2, const R2, O2, COL >,
                 MV_MULT, COL >& rhs ) {
@@ -3352,9 +3411,9 @@ namespace xmagma{
     class OpExecutor< Vector< T, ROW >, V_INPLACE_SUB,
             VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 VM_MULT, ROW > 
         > {
@@ -3362,9 +3421,9 @@ namespace xmagma{
         static void apply( Vector< T, ROW >& lhs, 
                 const VectorExpression< const T,
                 const VectorExpression< const T, const L2, const R2, O2, ROW >,
-                const MatrixExpression<
-                    const MatrixExpression< const L1, const R1, O1 >,
-                    const MatrixExpression< const L1, const R1, O1 >,
+                const MatrixExpression< const T,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
+                    const MatrixExpression< const T, const L1, const R1, O1 >,
                     M_TRANS >,
                 VM_MULT, ROW >& rhs ) {
             Matrix< T > m( rhs.rhs().rhs() );
@@ -3376,11 +3435,11 @@ namespace xmagma{
     // A = v1 * t( v2 )
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_ASSIGN, 
-            MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, const Vector< T, M1 >, 
                     const Vector< T, M >, V_OUTER >& rhs ) {
             lhs = 0;
             v_outer( rhs.lhs(), rhs.rhs(), lhs, 1 );
@@ -3389,12 +3448,12 @@ namespace xmagma{
     // A = v1 * t( v2 ) * a
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const int, M_SCALE >& rhs ) {
             lhs = 0;
@@ -3403,12 +3462,12 @@ namespace xmagma{
     };
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const float, M_SCALE >& rhs ) {
             lhs = 0;
@@ -3417,12 +3476,12 @@ namespace xmagma{
     };
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const double, M_SCALE >& rhs ) {
             lhs = 0;
@@ -3432,11 +3491,11 @@ namespace xmagma{
     // A += v1 * t( v2 )
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, 
-            MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, const Vector< T, M1 >, 
                     const Vector< T, M >, V_OUTER >& rhs ) {
             v_outer( rhs.lhs(), rhs.rhs(), lhs, 1 );
         }
@@ -3444,12 +3503,12 @@ namespace xmagma{
     // A += v1 * t( v2 ) * a
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const int, M_SCALE >& rhs ) {
             v_outer( rhs.lhs().lhs(), rhs.lhs().rhs(), lhs, rhs.rhs() );
@@ -3457,12 +3516,12 @@ namespace xmagma{
     };
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const float, M_SCALE >& rhs ) {
             v_outer( rhs.lhs().lhs(), rhs.lhs().rhs(), lhs, rhs.rhs() );
@@ -3470,12 +3529,12 @@ namespace xmagma{
     };
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const double, M_SCALE >& rhs ) {
             v_outer( rhs.lhs().lhs(), rhs.lhs().rhs(), lhs, rhs.rhs() );
@@ -3484,11 +3543,11 @@ namespace xmagma{
     // A -= v1 * t( v2 )
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB, 
-            MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, const Vector< T, M1 >, 
                     const Vector< T, M >, V_OUTER >& rhs ) {
             v_outer( rhs.lhs(), rhs.rhs(), lhs, -1 );
         }
@@ -3496,12 +3555,12 @@ namespace xmagma{
     // A -= v1 * t( v2 ) * a
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const int, M_SCALE >& rhs ) {
             v_outer( rhs.lhs().lhs(), rhs.lhs().rhs(), lhs, -rhs.rhs() );
@@ -3509,12 +3568,12 @@ namespace xmagma{
     };
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const float, M_SCALE >& rhs ) {
             v_outer( rhs.lhs().lhs(), rhs.lhs().rhs(), lhs, -rhs.rhs() );
@@ -3522,12 +3581,12 @@ namespace xmagma{
     };
     template< typename T, VecType M, VecType M1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const Vector< T, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
                     const double, M_SCALE >& rhs ) {
             v_outer( rhs.lhs().lhs(), rhs.lhs().rhs(), lhs, -rhs.rhs() );
@@ -3537,12 +3596,12 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN, 
-            MatrixExpression< 
+            MatrixExpression< const T, 
                 const VectorExpression< const T, const L, const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                     const VectorExpression< const T, const L, const R, O, M1 >, 
                     const Vector< T, M >, V_OUTER >& rhs ) {
             lhs = 0;
@@ -3554,13 +3613,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression<
+            MatrixExpression< const T, const MatrixExpression< const T,
                 const VectorExpression< const T, const L, const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3573,13 +3632,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression<
+            MatrixExpression< const T, const MatrixExpression< const T,
                 const VectorExpression< const T, const L, const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3592,13 +3651,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression<
+            MatrixExpression< const T, const MatrixExpression< const T,
                 const VectorExpression< const T, const L, const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3612,12 +3671,12 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, 
-            MatrixExpression< const VectorExpression< const T, const L,
+            MatrixExpression< const T, const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const VectorExpression< const T, const L,
+                const MatrixExpression< const T, const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                     const Vector< T, M >, V_OUTER >& rhs ) {
             Vector< T, M1 > temp( rhs.lhs() );
@@ -3628,14 +3687,14 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< 
+            MatrixExpression< const T, const MatrixExpression< const T, 
                 const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3647,14 +3706,14 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< 
+            MatrixExpression< const T, const MatrixExpression< const T, 
                 const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3666,14 +3725,14 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< 
+            MatrixExpression< const T, const MatrixExpression< const T, 
                 const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3686,13 +3745,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB, 
-            MatrixExpression< 
+            MatrixExpression< const T, 
                 const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
+                const MatrixExpression< const T, 
                     const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                     const Vector< T, M >, V_OUTER >& rhs ) {
@@ -3704,14 +3763,14 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< 
+            MatrixExpression< const T, const MatrixExpression< const T, 
                 const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3723,14 +3782,14 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< 
+            MatrixExpression< const T, const MatrixExpression< const T, 
                 const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3742,14 +3801,14 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< 
+            MatrixExpression< const T, const MatrixExpression< const T, 
                 const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                 const Vector< T, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, 
                         const VectorExpression< const T, const L,
                             const R, O, M1 >, 
                         const Vector< T, M >, V_OUTER >, 
@@ -3762,12 +3821,12 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN, 
-            MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, const Vector< T, M1 >, 
                     const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >& rhs ) {
             lhs = 0;
@@ -3779,13 +3838,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const int, M_SCALE >& rhs ) {
@@ -3797,13 +3856,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const float, M_SCALE >& rhs ) {
@@ -3815,13 +3874,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const double, M_SCALE >& rhs ) {
@@ -3834,12 +3893,12 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, 
-            MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, const Vector< T, M1 >, 
                     const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >& rhs ) {
             Vector< T, M > temp( rhs.rhs() );
@@ -3850,13 +3909,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const int, M_SCALE >& rhs ) {
@@ -3867,13 +3926,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const float, M_SCALE >& rhs ) {
@@ -3884,13 +3943,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const double, M_SCALE >& rhs ) {
@@ -3902,12 +3961,12 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB, 
-            MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, const Vector< T, M1 >, 
                     const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >& rhs ) {
             Vector< T, M > temp( rhs.rhs() );
@@ -3918,13 +3977,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const int, M_SCALE >& rhs ) {
@@ -3935,13 +3994,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const float, M_SCALE >& rhs ) {
@@ -3952,13 +4011,13 @@ namespace xmagma{
     template< typename T, VecType M, VecType M1, 
             typename L, typename R, Oper O >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const Vector< T, M1 >, 
+            MatrixExpression< const T, const MatrixExpression< const T, const Vector< T, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const Vector< T, M1 >, 
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const Vector< T, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
                     const double, M_SCALE >& rhs ) {
@@ -3971,13 +4030,13 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_ASSIGN, 
-            MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                     const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >& rhs ) {
@@ -3992,14 +4051,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4014,14 +4073,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4036,14 +4095,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_ASSIGN,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4059,13 +4118,13 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD, 
-            MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                     const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >& rhs ) {
@@ -4079,14 +4138,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4100,14 +4159,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4121,14 +4180,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_ADD,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4143,13 +4202,13 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB, 
-            MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                     const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >& rhs ) {
@@ -4163,14 +4222,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const int, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4184,14 +4243,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const float, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 
@@ -4205,14 +4264,14 @@ namespace xmagma{
             typename L, typename R, Oper O,
             typename L1, typename R1, Oper O1 >
     class OpExecutor< Matrix< T >, M_INPLACE_SUB,
-            MatrixExpression< const MatrixExpression< const VectorExpression< const T, const L1,
+            MatrixExpression< const T, const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                 const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, const double, M_SCALE > > {
     public:
         static void apply( Matrix< T >& lhs, 
-                const MatrixExpression< 
-                    const MatrixExpression< const VectorExpression< const T, const L1,
+                const MatrixExpression< const T, 
+                    const MatrixExpression< const T, const VectorExpression< const T, const L1,
                             const R1, O1, M1 >, 
                         const VectorExpression< const T, const L,
                             const R, O, M >, V_OUTER >, 

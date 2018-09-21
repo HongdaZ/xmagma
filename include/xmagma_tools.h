@@ -106,7 +106,7 @@ namespace xmagma {
         return A.get_pointer() == B.get_pointer();
     }
     template< typename T, typename L, typename R, Oper O >
-    bool aliasing( const Matrix< T >& A, const MatrixExpression< const 
+    bool aliasing( const Matrix< T >& A, const MatrixExpression< const T, const 
     L, const R, O >& B ) {
         return aliasing( A, B.lhs() ) || aliasing( A, B.rhs() );
     }

@@ -27,17 +27,17 @@
 #include "xmagma_op_executor.h"
 #include "xmagma_operations.h"
 namespace xmagma {
-    template< typename L, typename R, Oper O >
+    template< typename T, typename L, typename R, Oper O >
     class MatrixExpression {
-        typedef MatrixExpression< const L,  const R, O > SelfType;
+        typedef MatrixExpression< const T, const L,  const R, O > SelfType;
     public: 
         typedef magma_int_t size_type;
         // Constructor (no default constructor for matrix expression}
         MatrixExpression( L& lhs, R& rhs ): lhs_( lhs ), rhs_( rhs ) {}
         // - expression( A )
-        MatrixExpression< const SelfType, const SelfType,  M_NEGATIVE > 
+        MatrixExpression< const T, const SelfType, const SelfType,  M_NEGATIVE > 
         operator-() const {
-            return MatrixExpression< const SelfType, 
+            return MatrixExpression< const T, const SelfType, 
                 const SelfType, M_NEGATIVE >
                 ( *this, *this );
         }
@@ -72,7 +72,7 @@ namespace xmagma {
     template< typename T > 
     template< typename L, typename R, Oper O >
     Matrix< T >::Matrix(const 
-        MatrixExpression< const L, const R, O >& proxy ):
+        MatrixExpression< const T, const L, const R, O >& proxy ):
         size1_( proxy.size1() ), size2_( proxy.size2() ), 
         ld_( magma_roundup( proxy.size1(), 32 ) ) {
         if ( size1_ > 0 && size2_ > 0 ) {
@@ -121,7 +121,7 @@ namespace xmagma {
     // mat_A = mat_expression( B )
     template< typename T >
     template< typename L, typename R, Oper O >
-    Matrix< T >& Matrix< T >::operator=( const MatrixExpression<
+    Matrix< T >& Matrix< T >::operator=( const MatrixExpression< const T,
         const L, const R, O >& proxy ) {
         assert( ( proxy.size1() == size1() || size1() == 0 )
                 && ( proxy.size2() == size2() || size2() == 0 )
@@ -132,13 +132,13 @@ namespace xmagma {
             ld_ = magma_roundup( proxy.size1(), 32 );
             mem_creator< T >( &elements_, ld_ * size2_ );
         }
-        OpExecutor< SelfType, M_ASSIGN, MatrixExpression< const L, const R,
+        OpExecutor< SelfType, M_ASSIGN, MatrixExpression< const T, const L, const R,
                 O > >::apply( *this, proxy );
         return *this;
     }
     // A = t( B )
     template< typename T >
-    Matrix< T >& Matrix< T >::operator=( const MatrixExpression< const 
+    Matrix< T >& Matrix< T >::operator=( const MatrixExpression< const T, const 
         SelfType, const SelfType, M_TRANS >& proxy ) {
         // A = t( A ), m = n
         if ( elements_ == proxy.lhs().get_pointer() ) {
@@ -174,7 +174,7 @@ namespace xmagma {
     }
     // A = solve( B )
     template< typename T >
-    Matrix< T >& Matrix< T >::operator=( const MatrixExpression< const 
+    Matrix< T >& Matrix< T >::operator=( const MatrixExpression< const T, const 
         SelfType, const SelfType, M_INV >& proxy ) {
         // A = solve( A ), m = n
         if ( elements_ == proxy.lhs().get_pointer() ) {
@@ -198,26 +198,26 @@ namespace xmagma {
     template< typename T >
     template< typename L, typename R, Oper O >
     Matrix< T >& Matrix< T >::operator+=( 
-        const MatrixExpression< const L, const R, O >& proxy ) {
+        const MatrixExpression< const T, const L, const R, O >& proxy ) {
         assert( proxy.size1() == size1_  && proxy.size2() == size2_ 
                 && bool( "dimension not match!" ) );
         assert( size1_ > 0 && size2_ > 0 
                 && bool( "Matrix not initialized!" ) );
         OpExecutor< SelfType, M_INPLACE_ADD, 
-                MatrixExpression< const L, const R, O > >::apply( *this, proxy );
+                MatrixExpression< const T, const L, const R, O > >::apply( *this, proxy );
         return *this;
     }
     // A -= expression( B )
     template< typename T >
     template< typename L, typename R, Oper O >
     Matrix< T >& Matrix< T >::operator-=( 
-    const MatrixExpression< const L, const R, O >& proxy  ) {
+    const MatrixExpression< const T, const L, const R, O >& proxy  ) {
         assert( proxy.size1() == size1_  && proxy.size2() == size2_ 
                 && bool( "dimension not match!" ) );
         assert( size1_ > 0 && size2_ > 0 
                 && bool( "Matrix not initialized!" ) );
         OpExecutor< SelfType, M_INPLACE_SUB, 
-                MatrixExpression< const L, const R, O > >::apply( *this, proxy );
+                MatrixExpression< const T, const L, const R, O > >::apply( *this, proxy );
         return *this;
     }
     // A += B
@@ -265,19 +265,19 @@ namespace xmagma {
     }
     // expression = trans( A )
     template< typename T >
-    MatrixExpression< const Matrix< T >, const Matrix< T >, M_TRANS > 
+    MatrixExpression< const T, const Matrix< T >, const Matrix< T >, M_TRANS > 
     t( const Matrix< T >& A ) {
-        return MatrixExpression< const Matrix< T >, const Matrix< T >, 
+        return MatrixExpression< const T, const Matrix< T >, const Matrix< T >, 
                 M_TRANS >( A, A );
     }
 
     // expression = trans( expression( A ) )
-    template< typename L, typename R, Oper O >
-    MatrixExpression< const MatrixExpression< const L, const R, O >,
-            const MatrixExpression< const L, const R, O >, M_TRANS > 
-    t( const MatrixExpression< const L, const R, O >& proxy ) {
-        return MatrixExpression< const MatrixExpression< const L, const R,
-                O >, const MatrixExpression< const L, const R, O >, M_TRANS >
+    template< typename T, typename L, typename R, Oper O >
+    MatrixExpression< const T, const MatrixExpression< const T, const L, const R, O >,
+            const MatrixExpression< const T, const L, const R, O >, M_TRANS > 
+    t( const MatrixExpression< const T, const L, const R, O >& proxy ) {
+        return MatrixExpression< const T, const MatrixExpression< const T, const L, const R,
+                O >, const MatrixExpression< const T, const L, const R, O >, M_TRANS >
                 ( proxy, proxy );
     }
 } //xmagma

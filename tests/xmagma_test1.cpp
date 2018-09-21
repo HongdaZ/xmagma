@@ -581,7 +581,7 @@ xMat6 + ( xMat6 + xMat6 );
    xMat6 += xV3 * 2 * ( xV5 + xV6 );
    printf( "xMat6\n");
    print( xMat6 );
-   xMat6 -= ( xV3 + xV4 ) * 2 * ( xV5 + xV6 ) + xMat5;
+   xMat6 -=  xMat5 + ( xV3 + xV4 ) * 2 * ( xV5 + xV6 ) + xMat5;
    printf( "xMat6\n");
    print( xMat6 );
    inv( xMat6 );
@@ -612,6 +612,32 @@ xMat6 + ( xMat6 + xMat6 );
    xMat6 -= solve( xMat11 / 2 );
    printf( "xMat6\n");
    print( xMat6 );
+   printf( "det( xMat6 ) = %f\n", det( xMat6 ) );
+   printf( "det( xMat6 ) = %f\n", det( xMat6 / 2 ) );
+   printf( "det( xMat6 ) = %f\n", det( xMat6 / 2 - xMat5 ) );
+   printf( "det( xMat5 ) = %f\n", det( xMat5 ) );
+   
+   double array11 [ ] = { 1, 7, 3, 3, 4, 6, 0, 5, 3, 2, 14, 15, 0, 6, 0, 16 };
+   xmagma::RMatrix< double > RMat11( &array11[ 0 ], 4, 4 );
+   xmagma::Matrix< double > xMat12( 4, 4 );
+
+   xmagma::copy( RMat11, xMat12 );
+   printf( "det( xMat12 ) = %f\n\n\n\n\n\n\n", det( xMat12 ) );
+   
+   
+   double array13 [ ] = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 };
+   double array14 [ ] = { 0, 0, 0, 0, 0,  1.0 / 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0 / 4 };
+   xmagma::RMatrix< double > RMat13( &array13[ 0 ], 4, 4 );
+   xmagma::RMatrix< double > RMat14( &array14[ 0 ], 4, 4 );
+   xmagma::Matrix< double > LOVE( 4, 4 ), XUN( 4, 4 ), FOREVER( 4, 4 );
+   copy( RMat13, LOVE );
+   copy( RMat14, XUN );
+   FOREVER = solve( LOVE + XUN );
+   printf( "solve( LOVE + XUN ) = \n" );
+   print( FOREVER );
+   
+
+   
    
    
    magma_free_cpu (a); // free host memory
