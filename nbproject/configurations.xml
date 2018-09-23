@@ -15,8 +15,8 @@
       <itemPath>include/xmagma_operations.h</itemPath>
       <itemPath>include/xmagma_tools.h</itemPath>
       <itemPath>include/xmagma_util.h</itemPath>
-      <itemPath>xmagma_vector.h</itemPath>
-      <itemPath>xmagma_vector_expression.h</itemPath>
+      <itemPath>include/xmagma_vector.h</itemPath>
+      <itemPath>include/xmagma_vector_expression.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -128,11 +128,11 @@
       </item>
       <item path="include/xmagma_util.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/xmagma_vector.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="tests/xmagma_test1.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="xmagma_vector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
     <conf name="Release" type="2">
@@ -210,11 +210,11 @@
       </item>
       <item path="include/xmagma_util.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="include/xmagma_vector.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="include/xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
+      </item>
       <item path="tests/xmagma_test1.cpp" ex="false" tool="1" flavor2="0">
-      </item>
-      <item path="xmagma_vector.h" ex="false" tool="3" flavor2="0">
-      </item>
-      <item path="xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
       </item>
     </conf>
   </confs>
