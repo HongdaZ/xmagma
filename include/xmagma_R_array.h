@@ -9,6 +9,7 @@
 #define XMAGMA_R_ARRAY_H
 
 #include <iostream>
+#include <xmagma_util.h>
 
 #ifdef HAVE_CUBLAS
 #include "cublas_v2.h"    
@@ -23,8 +24,13 @@ namespace xmagma {
     class RVector {
     T* start_;
     magma_int_t len_;
+    bool r_;
     public:
-        RVector( T* ptr, magma_int_t len ): start_( ptr ), len_( len ){};
+        RVector( T* ptr, magma_int_t len ): start_( ptr ),
+                len_( len ), r_( true ) {}
+        RVector( magma_int_t len ): start_( NULL ), len_( len ), r_( false ) {
+            host_creator< T >( &start_, len );
+        }
         T &operator()( magma_int_t i ) { 
 //            if( i >= len_ ){
 //                std::cout << "subscript out of bounds" << std::endl;
@@ -42,6 +48,11 @@ namespace xmagma {
         magma_int_t size() const { return len_; }
         T* begin(){ return &start_[ 0 ]; }
         T* end(){ return &start_[ 0 ] + len_; }
+        ~RVector() {
+            if( !r_ ) {
+                magma_free_cpu( start_ );
+            }
+        }
         typedef magma_int_t type;
 };
     template < typename T >
@@ -49,9 +60,14 @@ namespace xmagma {
     T* start_;
     magma_int_t row_;
     magma_int_t col_;
+    bool r_;
 public:
     RMatrix( T* ptr, magma_int_t nrow, magma_int_t ncol ):
-    start_( ptr ), row_( nrow ), col_( ncol ){};
+    start_( ptr ), row_( nrow ), col_( ncol ), r_( true ) {}
+    RMatrix( magma_int_t nrow, magma_int_t ncol ):
+    start_( NULL ), row_( nrow ), col_( ncol ), r_( false ) {
+        host_creator< T >( &start_, row_ * col_ );
+    }
     T &operator()( magma_int_t i, magma_int_t j ) { 
 //        if( i >= row_ || j >= col_ ){
 //            std::cout << "subscript out of bounds" << std::endl;
@@ -66,6 +82,11 @@ public:
     magma_int_t size2() const { return col_; }
     typedef magma_int_t size_type;
     T* begin(){ return &start_[ 0 ]; }
+    ~RMatrix(){
+        if( !r_ ) {
+            magma_free_cpu( start_ );
+        }
+    }
     };
     /* Overload << operator */
     //RMatrix
@@ -92,6 +113,19 @@ public:
         }
         out <<"\n" << "];" << "\n";
         return out;
+    }
+    template< typename T1, typename T2 >
+    void host_copy( const RVector< T1 >& v1, RVector< T2 >& v2 ) {
+        for( magma_int_t i = 0; i < v1.size(); ++ i ) {
+            v2[ i ] = v1[ i ];
+        }
+    }
+    template< typename T1, typename T2 >
+    void host_copy( const RMatrix< T1 >& M1, RMatrix< T2 >& M2 ) {
+        for( magma_int_t i = 0; i < M1.size1(); ++ i ) {
+            for( magma_int_t j = 0; j < M1.size2(); ++j )
+            M2( i, j ) = M1( i, j );
+        }
     }
 }
 

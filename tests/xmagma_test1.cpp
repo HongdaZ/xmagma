@@ -635,11 +635,16 @@ xMat6 + ( xMat6 + xMat6 );
    FOREVER = solve( LOVE + XUN );
    printf( "solve( LOVE + XUN ) = \n" );
    print( FOREVER );
-   
+   xmagma::RMatrix< float > rmat924( 4, 4 );
+   xmagma::RVector< float > rv924( 3 );
+   host_copy( rv3, rv924 );
+   host_copy( RMat11, rmat924 );
+   std::cout << rv924 << std::endl;
+   std::cout << rv3 << std::endl;
+   std::cout << rmat924 << std::endl;
+   std::cout << RMat11 << std::endl;
 
-   
-   
-   
+
    magma_free_cpu (a); // free host memory
    magma_free (d_a ); // free device memory
 

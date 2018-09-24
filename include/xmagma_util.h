@@ -54,6 +54,20 @@ namespace xmagma {
             magma_int_t n ) {
         return magma_dmalloc( ptr_ptr, n );
     }
+    template< typename T > 
+    magma_int_t host_creator( MagmaPtr< T > *ptr_ptr, magma_int_t n ) {
+        return 1;
+    };
+    template<>
+    magma_int_t host_creator< float > ( MagmaPtr< float > *ptr_ptr,
+            magma_int_t n ) {
+        return magma_smalloc_cpu( ptr_ptr, n );
+    }
+    template<>
+    magma_int_t host_creator< double > ( MagmaPtr< double > *ptr_ptr,
+            magma_int_t n ) {
+        return magma_dmalloc_cpu( ptr_ptr, n );
+    }
     
 }
 
