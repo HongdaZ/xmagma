@@ -61,7 +61,7 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-L/usr/lib64/ -L/usr/local/cuda/lib64 -L/usr/local/magma/lib -lmagma -lcublas -lcudart -lopenblas
+LDLIBSOPTIONS=-L/usr/lib64/ -L/usr/local/cuda/lib64 -L/usr/local/openblas/lib -L/usr/local/magma/lib -lmagma -lcublas -lcudart -lopenblas
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}

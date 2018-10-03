@@ -82,6 +82,7 @@ public:
     magma_int_t size2() const { return col_; }
     typedef magma_int_t size_type;
     T* begin(){ return &start_[ 0 ]; }
+    const T* begin() const{ return &start_[ 0 ]; }
     ~RMatrix(){
         if( !r_ ) {
             magma_free_cpu( start_ );
@@ -122,9 +123,10 @@ public:
     }
     template< typename T1, typename T2 >
     void host_copy( const RMatrix< T1 >& M1, RMatrix< T2 >& M2 ) {
-        for( magma_int_t i = 0; i < M1.size1(); ++ i ) {
-            for( magma_int_t j = 0; j < M1.size2(); ++j )
-            M2( i, j ) = M1( i, j );
+        const T1 *M1PTR = M1.begin();
+        T2 *M2PTR = M2.begin();
+        for( magma_int_t i = 0; i < M1.size1() * M1.size2(); ++ i ) {
+            M2PTR[ i ] = M1PTR[ i ];
         }
     }
 }

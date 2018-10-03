@@ -77,6 +77,7 @@
           <linkerAddLib>
             <pElem>/usr/lib64/</pElem>
             <pElem>/usr/local/cuda/lib64</pElem>
+            <pElem>/usr/local/openblas/lib</pElem>
             <pElem>/usr/local/magma/lib</pElem>
           </linkerAddLib>
           <linkerLibItems>
