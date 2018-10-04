@@ -81,7 +81,7 @@
             <pElem>/usr/local/magma/lib</pElem>
           </linkerAddLib>
           <linkerLibItems>
-            <linkerOptionItem>-lmagma -lcublas -lcudart -lopenblas</linkerOptionItem>
+            <linkerOptionItem>-lmagma -lcublas -lcudart -lopenblas -fopenmp</linkerOptionItem>
           </linkerLibItems>
         </linkerTool>
       </compileType>

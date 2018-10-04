@@ -9,6 +9,7 @@
 #define XMAGMA_R_ARRAY_H
 
 #include <iostream>
+#include <omp.h>
 #include <xmagma_util.h>
 
 #ifdef HAVE_CUBLAS
@@ -47,6 +48,7 @@ namespace xmagma {
             return this->operator()( i ) ; }
         magma_int_t size() const { return len_; }
         T* begin(){ return &start_[ 0 ]; }
+        const T* begin() const{ return &start_[ 0 ]; }
         T* end(){ return &start_[ 0 ] + len_; }
         ~RVector() {
             if( !r_ ) {
@@ -117,15 +119,27 @@ public:
     }
     template< typename T1, typename T2 >
     void host_copy( const RVector< T1 >& v1, RVector< T2 >& v2 ) {
-        for( magma_int_t i = 0; i < v1.size(); ++ i ) {
-            v2[ i ] = v1[ i ];
+        const T1 *V1PTR = v1.begin();
+        T2 *V2PTR = v2.begin();
+        int n = v1.size();
+        magma_int_t i;
+#pragma omp parallel for num_threads( 4 ) \
+    shared( V1PTR , V2PTR,  n ) \
+    private( i )
+        for(  i = 0; i < v1.size(); ++ i ) {
+            V2PTR[ i ] = V1PTR[ i ];
         }
     }
     template< typename T1, typename T2 >
     void host_copy( const RMatrix< T1 >& M1, RMatrix< T2 >& M2 ) {
         const T1 *M1PTR = M1.begin();
         T2 *M2PTR = M2.begin();
-        for( magma_int_t i = 0; i < M1.size1() * M1.size2(); ++ i ) {
+        int n = M1.size1() * M1.size2();
+        magma_int_t i;
+#pragma omp parallel for num_threads( 4 ) \
+    shared( M1PTR , M2PTR,  n ) \
+    private( i )
+        for( i = 0; i < n ; ++ i ) {
             M2PTR[ i ] = M1PTR[ i ];
         }
     }
