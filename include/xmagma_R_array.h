@@ -123,7 +123,8 @@ public:
         T2 *V2PTR = v2.begin();
         int n = v1.size();
         magma_int_t i;
-#pragma omp parallel for shared( V1PTR , V2PTR,  n ) \
+#pragma omp parallel num_threads( 8 ) \
+    for shared( V1PTR , V2PTR,  n ) \
     private( i )
         for(  i = 0; i < v1.size(); ++ i ) {
             V2PTR[ i ] = V1PTR[ i ];
@@ -135,7 +136,8 @@ public:
         T2 *M2PTR = M2.begin();
         int n = M1.size1() * M1.size2();
         magma_int_t i;
-#pragma omp parallel for shared( M1PTR , M2PTR,  n ) \
+#pragma omp parallel num_threads( 8 ) \
+    for shared( M1PTR , M2PTR,  n ) \
     private( i )
         for( i = 0; i < n ; ++ i ) {
             M2PTR[ i ] = M1PTR[ i ];
