@@ -13,7 +13,6 @@
 
 #include <stdlib.h>
 #include <iostream>
-#include "xmagma_backend.h"
 #include "xmagma.h"
 /*
  * Simple C++ Test Suite

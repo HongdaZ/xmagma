@@ -115,7 +115,7 @@ namespace xmagma{
     // Transfer vector from device to host
     template< typename T, VecType M > 
     void transfer_vector( Vector< T, M >& v1, RVector< T >& v2 ){};
-    template<>
+    template<> inline
     void transfer_vector< float, ROW >( Vector< float, ROW >& v1,
             RVector< float >& v2 ){
         magma_sgetvector( v1.size(), v1.get_pointer(),

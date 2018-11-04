@@ -9,52 +9,52 @@
             <url>include/xmagma_operations.h</url>
             <bookmark id="37">
                 <name/>
-                <line>619</line>
+                <line>627</line>
                 <key/>
             </bookmark>
             <bookmark id="42">
                 <name/>
-                <line>1066</line>
+                <line>1074</line>
                 <key/>
             </bookmark>
             <bookmark id="26">
                 <name/>
-                <line>1235</line>
+                <line>1243</line>
                 <key/>
             </bookmark>
             <bookmark id="30">
                 <name/>
-                <line>1340</line>
+                <line>1348</line>
                 <key/>
             </bookmark>
             <bookmark id="47">
                 <name/>
-                <line>1552</line>
+                <line>1560</line>
                 <key/>
             </bookmark>
             <bookmark id="32">
                 <name/>
-                <line>2425</line>
+                <line>2433</line>
                 <key/>
             </bookmark>
             <bookmark id="43">
                 <name/>
-                <line>3537</line>
+                <line>3545</line>
                 <key/>
             </bookmark>
             <bookmark id="44">
                 <name/>
-                <line>3763</line>
+                <line>3771</line>
                 <key/>
             </bookmark>
             <bookmark id="45">
                 <name/>
-                <line>3971</line>
+                <line>3979</line>
                 <key/>
             </bookmark>
             <bookmark id="46">
                 <name/>
-                <line>4142</line>
+                <line>4150</line>
                 <key/>
             </bookmark>
         </file>
@@ -64,11 +64,12 @@
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_vector.h</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_operations.h</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_op_executor.h</file>
-            <file>file:/home/hzhang/Documents/xmagma/tests/xmagma_test1.cpp</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_communicate.h</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_matrix_expression.h</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_vector_expression.h</file>
+            <file>file:/home/hzhang/Documents/xmagma/src/xmagma_backend.cpp</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_forwards.h</file>
+            <file>file:/home/hzhang/Documents/xmagma/include/xmagma.h</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_util.h</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_R_array.h</file>
             <file>file:/home/hzhang/Documents/xmagma/include/xmagma_matrix.h</file>
