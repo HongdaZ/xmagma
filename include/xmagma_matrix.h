@@ -95,12 +95,12 @@ namespace xmagma {
     // print matrix
     template< typename T >
     void print( Matrix< T >& a ) {};
-    template<>
+    template<> inline
     void print( Matrix< float >& a ) {
         magma_sprint_gpu( a.size1(), a.size2(), a.get_pointer(),
             a.ld(), Backend::get_queue());
     };
-    template<>
+    template<> inline
     void print( Matrix< double >& a ) {
         magma_dprint_gpu( a.size1(), a.size2(), a.get_pointer(),
             a.ld(), Backend::get_queue());

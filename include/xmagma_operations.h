@@ -20,14 +20,14 @@ namespace xmagma{
     template< typename T > 
     void copy_matrix( const Matrix< T >& mat1, 
             Matrix< T >& mat2 ){ };
-    template<>
+    template<> inline
     void copy_matrix< float >( const Matrix< float >& mat1,
             Matrix< float >& mat2 ){
         magma_scopymatrix( mat1.size1(), mat1.size2(), mat1.get_pointer(),
                 mat1.ld(), mat2.get_pointer(), mat2.ld(), 
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void copy_matrix< double >( const Matrix< double >& mat1,
             Matrix< double >& mat2 ){
         magma_dcopymatrix( mat1.size1(), mat1.size2(), mat1.get_pointer(),
@@ -53,14 +53,14 @@ namespace xmagma{
     template< typename T > 
     void transfer_matrix( RMatrix< T >& mat1, 
             Matrix< T >& mat2 ){};
-    template<>
+    template<> inline
     void transfer_matrix< float >( RMatrix< float >& mat1,
             Matrix< float >& mat2 ){
         magma_ssetmatrix( mat1.size1(), mat1.size2(), mat1.begin(),
                 mat1.size1(), mat2.get_pointer(), mat2.ld(), 
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_matrix< double >( RMatrix< double >& mat1,
             Matrix< double >& mat2 ){
         magma_dsetmatrix( mat1.size1(), mat1.size2(), mat1.begin(),
@@ -71,25 +71,25 @@ namespace xmagma{
     template< typename T, VecType M > 
     void transfer_vector( RVector< T >& v1, 
             Vector< T, M >& v2 ){};
-    template<>
+    template<> inline
     void transfer_vector< float, ROW >( RVector< float >& v1,
             Vector< float, ROW >& v2 ){
         magma_ssetvector( v1.size(), v1.begin(), 1, v2.get_pointer(), 1,
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_vector< float, COL >( RVector< float >& v1,
             Vector< float, COL >& v2 ){
         magma_ssetvector( v1.size(), v1.begin(), 1, v2.get_pointer(), 1,
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_vector< double, ROW >( RVector< double >& v1,
             Vector< double, ROW >& v2 ){
         magma_dsetvector( v1.size(), v1.begin(), 1, v2.get_pointer(), 1,
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_vector< double, COL >( RVector< double >& v1,
             Vector< double, COL >& v2 ){
         magma_dsetvector( v1.size(), v1.begin(), 1, v2.get_pointer(), 1,
@@ -98,14 +98,14 @@ namespace xmagma{
     // Transfer matrix from device to host 
     template< typename T > 
     void transfer_matrix( Matrix< T >& mat1, RMatrix< T >& mat2 ){};
-    template<>
+    template<> inline
     void transfer_matrix< float >( Matrix< float >& mat1,
             RMatrix< float >& mat2 ){
         magma_sgetmatrix( mat1.size1(), mat1.size2(), mat1.get_pointer(),
                 mat1.ld(), mat2.begin(), mat2.size1(), 
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_matrix< double >( Matrix< double >& mat1,
             RMatrix< double >& mat2 ){
         magma_dgetmatrix( mat1.size1(), mat1.size2(), mat1.get_pointer(),
@@ -122,21 +122,21 @@ namespace xmagma{
                 1, v2.begin(), 1,
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_vector< float, COL >( Vector< float, COL >& v1,
             RVector< float >& v2 ){
         magma_sgetvector( v1.size(), v1.get_pointer(),
                 1, v2.begin(), 1,
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_vector< double, ROW >( Vector< double, ROW >& v1,
             RVector< double >& v2 ){
         magma_dgetvector( v1.size(), v1.get_pointer(),
                 1, v2.begin(), 1,
                 Backend::get_queue()  );
     }
-    template<>
+    template<> inline
     void transfer_vector< double, COL >( Vector< double, COL >& v1,
             RVector< double >& v2 ){
         magma_dgetvector( v1.size(), v1.get_pointer(),
@@ -147,12 +147,12 @@ namespace xmagma{
     // inplace transpose
     template< typename T > 
     void inplace_trans( Matrix< T >& mat ) {};
-    template<>
+    template<> inline
     void inplace_trans< float >( Matrix< float >& mat ) {
         magmablas_stranspose_inplace( mat.size1(), mat.get_pointer(),
                 mat.ld(), Backend::get_queue() ); 
     }
-    template<>
+    template<> inline
     void inplace_trans< double >( Matrix< double >& mat ) {
         magmablas_dtranspose_inplace( mat.size1(), mat.get_pointer(),
                 mat.ld(), Backend::get_queue() ); 
@@ -160,18 +160,21 @@ namespace xmagma{
     // transpose
     template< typename T > 
     void trans( const Matrix< T >& a, Matrix< T >& ta ) {};
-    template<>
+    template<> inline
     void trans< float >( const Matrix< float >& a, Matrix< float >& ta ) {
         magmablas_stranspose( a.size1(), a.size2(), a.get_pointer(),
                 a.ld(), ta.get_pointer(), ta.ld(), Backend::get_queue() ); 
     }
-    template<>
+    template<> inline
     void trans< double >( const Matrix< double >& a, Matrix< double >& ta ) {
         magmablas_dtranspose( a.size1(), a.size2(), a.get_pointer(),
                 a.ld(), ta.get_pointer(), ta.ld(), Backend::get_queue() ); 
     }
     // inverse
-    void inv( Matrix< float >& A ) {
+    template< typename T > 
+    void inv( Matrix< T >& A ) {};
+    template<> inline
+    void inv< float >( Matrix< float >& A ) {
         magma_int_t ldwork, *ipiv, info;
         magmaFloat_ptr dwork;
         magma_imalloc_cpu( &ipiv, A.size1() );
@@ -184,7 +187,8 @@ namespace xmagma{
         magma_free_cpu( ipiv );
         magma_free( dwork );
     }
-    void inv( Matrix< double >& A ) {
+    template <> inline
+    void inv< double >( Matrix< double >& A ) {
         magma_int_t ldwork, *ipiv, info;
         magmaDouble_ptr dwork;
         magma_imalloc_cpu( &ipiv, A.size1() );
@@ -201,13 +205,13 @@ namespace xmagma{
     template< typename T >
     void inplace_add( Matrix< T >& b, const Matrix< T >& a, 
             const T s = 1 ) {};
-    template<>
+    template<> inline
     void inplace_add( Matrix< float >& b, const Matrix< float >& a, 
             const float s ) {
         magmablas_sgeadd( a.size1(), a.size2(), s, a.get_pointer(), a.ld(),
                 b.get_pointer(), b.ld(), Backend::get_queue() );
     }
-    template<>
+    template<> inline
     void inplace_add( Matrix< double >& b, const Matrix< double >& a, 
             const double s ) {
         magmablas_dgeadd( a.size1(), a.size2(), s, a.get_pointer(), a.ld(),
@@ -231,13 +235,13 @@ namespace xmagma{
     template< typename T >
     void inplace_add2( Matrix< T >& b, const Matrix< T >& a, 
             const T s, const T beta = 0 ) {};
-    template<>
+    template<> inline
     void inplace_add2( Matrix< float >& b, const Matrix< float >& a, 
             const float s, const float beta ) {
         magmablas_sgeadd2( a.size1(), a.size2(), s, a.get_pointer(), a.ld(),
                 beta, b.get_pointer(), b.ld(), Backend::get_queue() );
     }
-    template<>
+    template<> inline
     void inplace_add2( Matrix< double >& b, const Matrix< double >& a, 
             const double s, const double beta ) {
         magmablas_dgeadd2( a.size1(), a.size2(), s, a.get_pointer(), a.ld(),
@@ -247,7 +251,7 @@ namespace xmagma{
     template< typename T >
     void m_mult( const Matrix< T >& A, const Matrix< T >& B, Matrix< T >& C, 
             magma_trans_t transA, magma_trans_t transB, T a = 1, T b = 0 ) {};
-    template<>
+    template<> inline
     void m_mult( const Matrix< float >& A, const Matrix< float >& B, 
             Matrix< float >& C, magma_trans_t transA, magma_trans_t transB,
             float a, float b ) {
@@ -259,7 +263,7 @@ namespace xmagma{
                 B.get_pointer(), B.ld(), b, C.get_pointer(), C.ld(), 
                 Backend::get_queue() );
     }
-    template<>
+    template<> inline
     void m_mult( const Matrix< double >& A, const Matrix< double >& B, 
             Matrix< double >& C, magma_trans_t transA, magma_trans_t transB,
             double a, double b ) {
@@ -290,13 +294,13 @@ namespace xmagma{
     template< typename T >
     void inplace_sub( Matrix< T >& b, const Matrix< T >& a,
             const T s = 1 ) {};
-    template<>
+    template<> inline
     void inplace_sub( Matrix< float >& b, const Matrix< float >& a,
             const float s ) {
         magmablas_sgeadd( a.size1(), a.size2(),  -s, a.get_pointer(), a.ld(),
                 b.get_pointer(), b.ld(), Backend::get_queue() );
     }
-    template<>
+    template<> inline
     void inplace_sub( Matrix< double >& b, const Matrix< double >& a,
             const double s ) {
         magmablas_dgeadd( a.size1(), a.size2(),  -s, a.get_pointer(), a.ld(),
@@ -305,12 +309,12 @@ namespace xmagma{
     // set all elements of a matrix to be a constant value
     template< typename T >
     void set_const( Matrix< T >& A,  T a ) {};
-    template<>
+    template<> inline
     void set_const( Matrix< float >& A, float a ) {
         magmablas_slaset( MagmaFull, A.size1(), A.size2(), a, a, A.get_pointer(),
                 A.ld(), Backend::get_queue() );
     }
-    template<>
+    template<> inline
     void set_const( Matrix< double >& A, double a ) {
         magmablas_dlaset( MagmaFull, A.size1(), A.size2(), a, a, A.get_pointer(),
                 A.ld(), Backend::get_queue() );
@@ -330,14 +334,14 @@ namespace xmagma{
     // scale matrix
     template< typename T >
     void scale( Matrix< T >& a, T alpha ) {};
-    template<>
+    template<> inline
     void scale( Matrix< float >& a, float alpha ) {
         magma_int_t info;
         magmablas_slascl( MagmaFull, 0, 0, 1, alpha, a.size1(),
                 a.size2(), a.get_pointer(), a.ld(), Backend::get_queue(),
                 &info );
     }
-    template<>
+    template<> inline
     void scale( Matrix< double >& a, double alpha ) {
         magma_int_t info;
         magmablas_dlascl( MagmaFull, 0, 0, 1, alpha, a.size1(),
@@ -416,7 +420,10 @@ namespace xmagma{
                 1, A.get_pointer(), A.ld(), Backend::get_queue() );
     }
     // Determinant of matrix det( A )
-    float det( Matrix< float > A ) {
+    template< typename T >
+    T det( Matrix< T > A ) {};
+    template<> inline
+    float det< float >( Matrix< float > A ) {
         float res = 0;
         magma_int_t *ipiv, info, s = 0;
         float *mat;
@@ -439,7 +446,8 @@ namespace xmagma{
         res = s * exp( res );
         return( res );
     }
-    double det( Matrix< double > A ) {
+    template<> inline
+    double det< double >( Matrix< double > A ) {
         double res = 1;
         magma_int_t *ipiv, info, s = 0;
         double *mat;

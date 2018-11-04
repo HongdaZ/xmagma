@@ -114,7 +114,7 @@ namespace xmagma {
     // print Vector
     template< typename T, VecType M >
     void print( Vector< T, M >& a ) {};
-    template<>
+    template<> inline
     void print( Vector< float, ROW >& a ) {
         float* b;
         magma_int_t m = a.size();
@@ -124,7 +124,7 @@ namespace xmagma {
                 Backend::get_queue() );
         std::cout << temp;
     };
-    template<>
+    template<> inline
     void print( Vector< float, COL >& a ) {
         float* b;
         magma_int_t m = a.size();
@@ -138,7 +138,7 @@ namespace xmagma {
         }
         printf( "];\n" );
     };
-    template<>
+    template<> inline
     void print( Vector< double, ROW >& a ) {
         double* b;
         magma_int_t m = a.size();
@@ -148,7 +148,7 @@ namespace xmagma {
                 Backend::get_queue() );
         std::cout << temp;
     };
-    template<>
+    template<> inline
     void print( Vector< double, COL >& a ) {
         double* b;
         magma_int_t m = a.size();
