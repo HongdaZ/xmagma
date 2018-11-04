@@ -42,7 +42,6 @@ namespace xmagma {
         }
         static Queue magmaQueue;
     };
-    Queue Backend::magmaQueue;
 }
 
 #endif /* XMAGMA_BACKEND_H */

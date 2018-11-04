@@ -34,7 +34,8 @@ include Makefile
 OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
-OBJECTFILES=
+OBJECTFILES= \
+	${OBJECTDIR}/src/xmagma_backend.o
 
 # Test Directory
 TESTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}/tests
@@ -71,6 +72,11 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libxmagma.${CND_DLIB_EXT}: ${OBJECTFI
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/libxmagma.${CND_DLIB_EXT} ${OBJECTFILES} ${LDLIBSOPTIONS} -shared -fPIC
 
+${OBJECTDIR}/src/xmagma_backend.o: src/xmagma_backend.cpp
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.c) -O2 -fPIC  -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/xmagma_backend.o src/xmagma_backend.cpp
+
 # Subprojects
 .build-subprojects:
 
@@ -88,6 +94,19 @@ ${TESTDIR}/tests/xmagma_test1.o: tests/xmagma_test1.cpp
 	${RM} "$@.d"
 	$(COMPILE.cc) -O2 -DADD_ -DHAVE_CUBLAS -I/usr/local/cuda/include -I/usr/local/magma/include -I. -MMD -MP -MF "$@.d" -o ${TESTDIR}/tests/xmagma_test1.o tests/xmagma_test1.cpp
 
+
+${OBJECTDIR}/src/xmagma_backend_nomain.o: ${OBJECTDIR}/src/xmagma_backend.o src/xmagma_backend.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	@NMOUTPUT=`${NM} ${OBJECTDIR}/src/xmagma_backend.o`; \
+	if (echo "$$NMOUTPUT" | ${GREP} '|main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T main$$') || \
+	   (echo "$$NMOUTPUT" | ${GREP} 'T _main$$'); \
+	then  \
+	    ${RM} "$@.d";\
+	    $(COMPILE.c) -O2 -fPIC  -Dmain=__nomain -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/xmagma_backend_nomain.o src/xmagma_backend.cpp;\
+	else  \
+	    ${CP} ${OBJECTDIR}/src/xmagma_backend.o ${OBJECTDIR}/src/xmagma_backend_nomain.o;\
+	fi
 
 # Run Test Targets
 .test-conf:

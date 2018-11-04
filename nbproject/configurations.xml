@@ -25,6 +25,7 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>src/xmagma_backend.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"
@@ -133,6 +134,8 @@
       </item>
       <item path="include/xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
       </item>
+      <item path="src/xmagma_backend.cpp" ex="false" tool="1" flavor2="0">
+      </item>
       <item path="tests/xmagma_test1.cpp" ex="false" tool="1" flavor2="0">
       </item>
     </conf>
@@ -214,6 +217,8 @@
       <item path="include/xmagma_vector.h" ex="false" tool="3" flavor2="0">
       </item>
       <item path="include/xmagma_vector_expression.h" ex="false" tool="3" flavor2="0">
+      </item>
+      <item path="src/xmagma_backend.cpp" ex="false" tool="0" flavor2="0">
       </item>
       <item path="tests/xmagma_test1.cpp" ex="false" tool="1" flavor2="0">
       </item>
