@@ -1,23 +1,16 @@
 src/xmagma_backend.o: ../src/xmagma_backend.cpp \
  /home/hzhang/Documents/workspace/xmagma/include/xmagma_backend.h \
- /usr/local/cuda/include/cublas_v2.h /usr/local/cuda/include/cublas_api.h \
- /usr/local/cuda/include/driver_types.h \
- /usr/local/cuda/include/crt/host_defines.h \
- /usr/local/cuda/include/vector_types.h \
- /usr/local/cuda/include/cuComplex.h /usr/local/cuda/include/cuda_fp16.h \
- /usr/local/cuda/include/cuda_fp16.hpp \
- /usr/local/cuda/include/library_types.h \
  /usr/local/magma/include/magma_v2.h /usr/local/magma/include/magmablas.h \
  /usr/local/magma/include/magma_copy.h \
- /usr/local/magma/include/magma_types.h \
- /usr/local/cuda/include/cusparse_v2.h /usr/local/cuda/include/cusparse.h \
- /usr/local/cuda/include/cuda_fp16.h \
+ /usr/local/magma/include/magma_types.h /usr/local/cuda/include/cuda.h \
+ /usr/local/cuda/include/cusparse_v2.h \
  /usr/local/magma/include/magmablas_z.h \
  /usr/local/magma/include/magmablas_c.h \
  /usr/local/magma/include/magmablas_d.h \
  /usr/local/magma/include/magmablas_s.h \
  /usr/local/magma/include/magmablas_zc.h \
  /usr/local/magma/include/magmablas_ds.h \
+ /usr/local/magma/include/magmablas_h.h \
  /usr/local/magma/include/magma_batched.h \
  /usr/local/magma/include/magma_zbatched.h \
  /usr/local/magma/include/magma_cbatched.h \
@@ -43,6 +36,7 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
  /usr/local/magma/include/magma_sgehrd_m.h \
  /usr/local/magma/include/magma_zc.h /usr/local/magma/include/magma_ds.h \
  /usr/local/magma/include/magma_auxiliary.h \
+ /usr/local/magma/include/magma_htc.h \
  /usr/local/magma/include/magma_lapack.h \
  /usr/local/magma/include/magma_mangling.h \
  /usr/local/magma/include/magma_mangling_cmake.h \
@@ -53,24 +47,6 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
 
 /home/hzhang/Documents/workspace/xmagma/include/xmagma_backend.h:
 
-/usr/local/cuda/include/cublas_v2.h:
-
-/usr/local/cuda/include/cublas_api.h:
-
-/usr/local/cuda/include/driver_types.h:
-
-/usr/local/cuda/include/crt/host_defines.h:
-
-/usr/local/cuda/include/vector_types.h:
-
-/usr/local/cuda/include/cuComplex.h:
-
-/usr/local/cuda/include/cuda_fp16.h:
-
-/usr/local/cuda/include/cuda_fp16.hpp:
-
-/usr/local/cuda/include/library_types.h:
-
 /usr/local/magma/include/magma_v2.h:
 
 /usr/local/magma/include/magmablas.h:
@@ -79,11 +55,9 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
 
 /usr/local/magma/include/magma_types.h:
 
+/usr/local/cuda/include/cuda.h:
+
 /usr/local/cuda/include/cusparse_v2.h:
-
-/usr/local/cuda/include/cusparse.h:
-
-/usr/local/cuda/include/cuda_fp16.h:
 
 /usr/local/magma/include/magmablas_z.h:
 
@@ -96,6 +70,8 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
 /usr/local/magma/include/magmablas_zc.h:
 
 /usr/local/magma/include/magmablas_ds.h:
+
+/usr/local/magma/include/magmablas_h.h:
 
 /usr/local/magma/include/magma_batched.h:
 
@@ -148,6 +124,8 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
 /usr/local/magma/include/magma_ds.h:
 
 /usr/local/magma/include/magma_auxiliary.h:
+
+/usr/local/magma/include/magma_htc.h:
 
 /usr/local/magma/include/magma_lapack.h:
 

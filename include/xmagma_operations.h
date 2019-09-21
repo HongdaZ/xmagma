@@ -256,11 +256,11 @@ namespace xmagma{
             Matrix< float >& C, magma_trans_t transA, magma_trans_t transB,
             float a, float b ) {
         magma_int_t m = 0, n = 0, k = 0;
-        m = ( transA ) ? A.size2() : A.size1();
-        k = ( transA ) ? A.size1() : A.size2();
-        n = ( transB ) ? B.size2() : B.size1();
+        m = ( transA == MagmaTrans ) ? A.size2() : A.size1();
+        k = ( transA == MagmaTrans ) ? A.size1() : A.size2();
+        n = ( transB == MagmaTrans ) ? B.size1() : B.size2();
         magmablas_sgemm( transA, transB, m, n, k, a, A.get_pointer(), A.ld(),
-                B.get_pointer(), B.ld(), b, C.get_pointer(), C.ld(), 
+                B.get_pointer(), B.ld(), b, C.get_pointer(), C.ld(),
                 Backend::get_queue() );
     }
     template<> inline
@@ -268,9 +268,9 @@ namespace xmagma{
             Matrix< double >& C, magma_trans_t transA, magma_trans_t transB,
             double a, double b ) {
         magma_int_t m = 0, n = 0, k = 0;
-        m = ( transA ) ? A.size2() : A.size1();
-        k = ( transA ) ? A.size1() : A.size2();
-        n = ( transB ) ? B.size2() : B.size1();
+        m = ( transA == MagmaTrans ) ? A.size2() : A.size1();
+        k = ( transA == MagmaTrans ) ? A.size1() : A.size2();
+        n = ( transB == MagmaTrans ) ? B.size2() : B.size1();
         magmablas_dgemm( transA, transB, m, n, k, a, A.get_pointer(), A.ld(),
                 B.get_pointer(), B.ld(), b, C.get_pointer(), C.ld(), 
                 Backend::get_queue() );
