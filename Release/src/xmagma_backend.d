@@ -1,5 +1,5 @@
 src/xmagma_backend.o: ../src/xmagma_backend.cpp \
- /home/hzhang/Documents/workspace/xmagma/include/xmagma_backend.h \
+ /home/hongda/Documents/workspace/xmagma/include/xmagma_backend.h \
  /usr/local/magma/include/magma_v2.h /usr/local/magma/include/magmablas.h \
  /usr/local/magma/include/magma_copy.h \
  /usr/local/magma/include/magma_types.h /usr/local/cuda/include/cuda.h \
@@ -16,6 +16,7 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
  /usr/local/magma/include/magma_cbatched.h \
  /usr/local/magma/include/magma_dbatched.h \
  /usr/local/magma/include/magma_sbatched.h \
+ /usr/local/magma/include/magma_hbatched.h \
  /usr/local/magma/include/magma_vbatched.h \
  /usr/local/magma/include/magma_zvbatched.h \
  /usr/local/magma/include/magma_cvbatched.h \
@@ -45,7 +46,7 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
  /usr/local/magma/include/magma_dlapack.h \
  /usr/local/magma/include/magma_slapack.h
 
-/home/hzhang/Documents/workspace/xmagma/include/xmagma_backend.h:
+/home/hongda/Documents/workspace/xmagma/include/xmagma_backend.h:
 
 /usr/local/magma/include/magma_v2.h:
 
@@ -82,6 +83,8 @@ src/xmagma_backend.o: ../src/xmagma_backend.cpp \
 /usr/local/magma/include/magma_dbatched.h:
 
 /usr/local/magma/include/magma_sbatched.h:
+
+/usr/local/magma/include/magma_hbatched.h:
 
 /usr/local/magma/include/magma_vbatched.h:
 

@@ -65,6 +65,7 @@ namespace xmagma {
             size1_( nrow ), size2_( ncol ), ld_( magma_roundup( nrow, 32 ) ) {
         if ( size1_> 0 && size2_ > 0 ) {
             mem_creator< T >( &elements_, ld_* size2_ );
+            cuda;
         }
     } 
     
